@@ -1,6 +1,7 @@
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
+import { prisma } from './config/prisma.config';
 
 const app = express();
 
@@ -10,11 +11,21 @@ app.use(cors());
 app.use(express.json());
 
 // Test Route
-app.get('/', (req, res) => {
-  res.status(200).json({
-    message: 'Welcome to Paint Shop API 🚀',
-    status: 'success',
-  });
+app.get('/', async (req, res) => {
+  // Thử check kết nối bằng cách đếm user
+  try {
+    const userCount = await prisma.user.count();
+    res.status(200).json({
+      message: 'Welcome to Price-Fight',
+      database: 'Connected to MySQL',
+      userCount: userCount,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: 'Database connection failed',
+      error: error,
+    });
+  }
 });
 
 export default app;
