@@ -12,7 +12,7 @@ app.use(express.json());
 // Test Route
 app.get('/', (req, res) => {
   res.status(200).json({
-    message: 'Welcome to Paint Shop API 🚀',
+    message: 'Welcome to Price-Fight',
     status: 'success',
   });
 });
