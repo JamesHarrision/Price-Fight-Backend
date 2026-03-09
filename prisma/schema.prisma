@@ -38,6 +38,12 @@ enum TransactionStatus {
   FAILED
 }
 
+enum TokenType {
+  REFRESH
+  VERIFICATION
+  RESET_PASSWORD
+}
+
 // ================= MODELS =================
 
 // Bảng users
@@ -49,6 +55,12 @@ model User {
   avatar_url String? // [BỔ SUNG] Ảnh đại diện user
   balance    Decimal @db.Decimal(10, 2)
   role       Role    @default(USER)
+
+  // Cờ xác thực email
+  is_verified Boolean @default(false)
+
+  // Quan hệ với bảng Token
+  tokens Token[]
 
   participatedEvents EventParticipant[]
   bids               BidHistory[]
@@ -137,4 +149,18 @@ model Transaction {
   user User        @relation(fields: [user_id], references: [id])
 
   @@map("transactions")
+}
+
+// [BỔ SUNG] Bảng Token
+model Token {
+  id         String    @id @default(uuid())
+  token      String    @unique // Chuỗi token (JWT refresh hoặc chuỗi random xác nhận)
+  type       TokenType
+  expires_at DateTime
+  user_id    String
+  created_at DateTime  @default(now())
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("tokens")
 }

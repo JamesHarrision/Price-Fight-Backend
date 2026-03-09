@@ -15,16 +15,22 @@
   "description": "",
   "dependencies": {
     "@prisma/client": "5.22",
+    "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "firebase": "^12.10.0",
-    "helmet": "^8.1.0"
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.3",
+    "nodemailer": "^8.0.1"
   },
   "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^25.3.5",
+    "@types/nodemailer": "^7.0.11",
     "@types/nodemon": "^1.19.6",
     "@typescript-eslint/eslint-plugin": "^8.56.1",
     "@typescript-eslint/parser": "^8.56.1",

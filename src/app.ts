@@ -2,6 +2,7 @@ import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import { prisma } from './config/prisma.config';
+import authRoutes from './routes/auth.route'
 
 const app = express();
 
@@ -9,6 +10,9 @@ const app = express();
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
+
+//Routes
+app.use('/api/auth', authRoutes);
 
 // Test Route
 app.get('/', async (req, res) => {
