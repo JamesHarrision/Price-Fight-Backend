@@ -5,7 +5,9 @@ import { passwordUtil } from "../utils/password.util";
 import { tokenUtil } from "../utils/token.util";
 
 import { sendVerificationEmail } from "../utils/mailer.util";
-import { TokenType } from "@prisma/client";
+import { Role, TokenType } from "@prisma/client";
+
+import jwt from 'jsonwebtoken'
 
 export class AuthService {
 
@@ -86,7 +88,7 @@ export class AuthService {
       console.error("Lỗi gửi mail:", error);
       throw new Error('EMAIL_SEND_FAILED');
     }
-    
+
     return true;
   }
 
@@ -116,5 +118,37 @@ export class AuthService {
       refreshToken,
       user: { id: user.id, email: user.email, full_name: user.full_name, role: user.role },
     };
+  }
+
+  // Cấp lại Access Token mới
+  public refreshToken = async (refreshToken: string) => {
+    try {
+      const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET as string) as any;
+
+      const tokenRecord = await this.tokenRepo.findByToken(refreshToken);
+      if (!tokenRecord || tokenRecord.type !== TokenType.REFRESH) {
+        throw new Error('INVALID_TOKEN');
+      }
+
+      const user = await this.userRepo.getUserById(tokenRecord.user_id);
+      if (!user) throw new Error('USER_NOT_FOUND');
+
+      const newAccessToken = tokenUtil.signAccessToken(
+        { id: user.id, role: user.role }
+      )
+      return { accessToken: newAccessToken };
+    } catch (error: any) {
+      throw new Error('INVALID_OR_EXPIRED_TOKEN');
+    }
+  }
+
+  public logout = async (refreshToken: string) => {
+    const tokenRecord = await this.tokenRepo.findByToken(refreshToken);
+
+    if (!tokenRecord || tokenRecord.type !== 'REFRESH') {
+      throw new Error('TOKEN_NOT_FOUND'); // <-- Bắt lỗi tại đây
+    }
+
+    await this.tokenRepo.delete(tokenRecord.id);
   }
 }
