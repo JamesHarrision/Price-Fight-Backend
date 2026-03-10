@@ -1,9 +1,7 @@
-import { Request, Response } from "express";
-import { AuthService } from "../services/auth.service";
-
+import { Request, Response } from 'express';
+import { AuthService } from '../services/auth.service';
 
 export class AuthController {
-
   private authService = new AuthService();
 
   public register = async (req: Request, res: Response) => {
@@ -29,7 +27,7 @@ export class AuthController {
       console.error(error);
       return res.status(500).json({ message: 'Lỗi server nội bộ' });
     }
-  }
+  };
 
   public verifyEmail = async (req: Request, res: Response) => {
     try {
@@ -52,7 +50,7 @@ export class AuthController {
       console.error(error);
       return res.status(500).json({ message: 'Lỗi server nội bộ' });
     }
-  }
+  };
 
   public resendEmail = async (req: Request, res: Response): Promise<any> => {
     try {
@@ -89,9 +87,8 @@ export class AuthController {
 
       return res.status(200).json({
         message: 'Đăng nhập thành công',
-        ...result
+        ...result,
       });
-
     } catch (error: any) {
       if (error.message === 'USER_NOT_FOUND' || error.message === 'INVALID_PASSWORD') {
         return res.status(400).json({ message: 'Email hoặc mật khẩu không chính xác' });
@@ -102,5 +99,74 @@ export class AuthController {
       console.error(error);
       return res.status(500).json({ message: 'Lỗi server nội bộ' });
     }
-  }
+  };
+
+  public forgotPassword = async (req: Request, res: Response) => {
+    try {
+      const { email } = req.body;
+      if (!email) {
+        return res.status(400).json({
+          message: 'Vui lòng cung cấp email!',
+        });
+      }
+
+      await this.authService.forgotPassword(email);
+
+      return res.status(200).json({
+        message: 'Mã OTP đã được gửi đến email của bạn.',
+      });
+    } catch (error: any) {
+      if (error.message === 'USER_NOT_FOUND') {
+        return res.status(404).json({
+          message: 'Không tìm thấy tài khoản với email này.',
+        });
+      }
+      if (error.message === 'EMAIL_SEND_FAILED') {
+        return res.status(500).json({
+          message: 'Lỗi hệ thống gửi mail. Vui lòng thử lại sau.',
+        });
+      }
+      console.error(error);
+      return res.status(500).json({
+        message: 'Lỗi server nội bộ.',
+      });
+    }
+  };
+
+  public resetPassword = async (req: Request, res: Response) => {
+    try {
+      const { email, otp, newPassword } = req.body;
+      if (!email || !otp || !newPassword) {
+        return res.status(400).json({
+          message: 'Vui lòng cung cấp đủ email, mã OTP và mật khẩu mới.',
+        });
+      }
+
+      await this.authService.resetPassword({ email, otp, newPassword });
+
+      return res.status(200).json({
+        message: 'Đặt lại mật khẩu thành công. Bạn có thể đăng nhập',
+      });
+    } catch (error: any) {
+      if (error.message === 'USER_NOT_FOUND') {
+        return res.status(404).json({
+          message: 'Không tìm thấy tài khoản.',
+        });
+      }
+      if (error.message === 'INVALID_OTP') {
+        return res.status(404).json({
+          message: 'Mã OTP không hợp lệ hoặc không đúng.',
+        });
+      }
+      if (error.message === 'OTP_EXPIRED') {
+        return res.status(404).json({
+          message: 'Mã OTP đã hết hạn. Vui lòng gửi lại yêu cầu.',
+        });
+      }
+      console.error(error);
+      return res.status(500).json({
+        message: 'Lỗi server nội bộ.',
+      });
+    }
+  };
 }
