@@ -9,4 +9,7 @@ router.post('/login', authController.login);
 router.get('/verify-email', authController.verifyEmail);
 router.post('/resend-email', authController.resendEmail);
 
+router.post('/refresh-token', authController.refreshToken);
+router.post('/logout', authController.logout);
+
 export default router;
