@@ -1,0 +1,166 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ================= ENUMS =================
+enum Role {
+  ADMIN
+  USER
+}
+
+enum EventStatus {
+  PENDING
+  ONGOING
+  ENDED
+}
+
+enum ItemStatus {
+  WAITING
+  LIVE
+  SOLD
+  UNSOLD
+}
+
+enum TransactionStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+enum TokenType {
+  REFRESH
+  VERIFICATION
+  RESET_PASSWORD
+}
+
+// ================= MODELS =================
+
+// Bảng users
+model User {
+  id         String  @id @default(uuid())
+  email      String  @unique
+  password   String
+  full_name  String
+  avatar_url String? // [BỔ SUNG] Ảnh đại diện user
+  balance    Decimal @db.Decimal(10, 2)
+  role       Role    @default(USER)
+
+  // Cờ xác thực email
+  is_verified Boolean @default(false)
+
+  // Quan hệ với bảng Token
+  tokens Token[]
+
+  participatedEvents EventParticipant[]
+  bids               BidHistory[]
+  transactions       Transaction[]
+  wonItems           AuctionItem[]      @relation("ItemWinner")
+
+  @@map("users")
+}
+
+// Bảng auction_events (Sự kiện tổng)
+model AuctionEvent {
+  id          String      @id @default(uuid())
+  title       String
+  description String?     @db.Text // [BỔ SUNG] Giới thiệu chi tiết về sự kiện
+  cover_image String? // [BỔ SUNG] Ảnh bìa/banner của sự kiện
+  start_time  DateTime
+  end_time    DateTime
+  status      EventStatus @default(PENDING)
+
+  items        AuctionItem[]
+  participants EventParticipant[]
+
+  @@map("auction_events")
+}
+
+// Bảng auction_items (Vật phẩm đấu giá)
+model AuctionItem {
+  id            String     @id @default(uuid())
+  event_id      String
+  name          String
+  description   String?    @db.Text // [BỔ SUNG] Thông tin mô tả chi tiết vật phẩm
+  primary_image String? // [BỔ SUNG] Ảnh đại diện chính của vật phẩm
+  images        Json? // [BỔ SUNG] Danh sách các ảnh khác (Lưu dạng mảng JSON URLs)
+  start_price   Decimal    @db.Decimal(10, 2)
+  step_price    Decimal    @db.Decimal(10, 2)
+  current_price Decimal?   @db.Decimal(10, 2)
+  winner_id     String?
+  status        ItemStatus @default(WAITING)
+
+  event        AuctionEvent  @relation(fields: [event_id], references: [id])
+  winner       User?         @relation("ItemWinner", fields: [winner_id], references: [id])
+  bids         BidHistory[]
+  transactions Transaction[]
+
+  @@map("auction_items")
+}
+
+// Bảng event_participants (Bảng trung gian)
+model EventParticipant {
+  event_id  String
+  user_id   String
+  joined_at DateTime @default(now())
+
+  event AuctionEvent @relation(fields: [event_id], references: [id])
+  user  User         @relation(fields: [user_id], references: [id])
+
+  @@id([event_id, user_id])
+  @@map("event_participants")
+}
+
+// Bảng bid_histories (Lịch sử đặt giá)
+model BidHistory {
+  id      String   @id @default(uuid())
+  item_id String
+  user_id String
+  amount  Decimal  @db.Decimal(10, 2)
+  time    DateTime @default(now())
+
+  item AuctionItem @relation(fields: [item_id], references: [id])
+  user User        @relation(fields: [user_id], references: [id])
+
+  @@map("bid_histories")
+}
+
+// Bảng transactions (Lịch sử giao dịch)
+model Transaction {
+  id             String            @id @default(uuid())
+  item_id        String
+  user_id        String
+  amount         Decimal           @db.Decimal(10, 2)
+  payment_method String?
+  status         TransactionStatus @default(PENDING)
+  created_at     DateTime          @default(now())
+
+  item AuctionItem @relation(fields: [item_id], references: [id])
+  user User        @relation(fields: [user_id], references: [id])
+
+  @@map("transactions")
+}
+
+// [BỔ SUNG] Bảng Token
+model Token {
+  id         String    @id @default(uuid())
+  token      String    @unique // Chuỗi token (JWT refresh hoặc chuỗi random xác nhận)
+  type       TokenType
+  expires_at DateTime
+  user_id    String
+  created_at DateTime  @default(now())
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("tokens")
+}

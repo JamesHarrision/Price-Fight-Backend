@@ -1,6 +1,8 @@
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
+import { prisma } from './config/prisma.config';
+import authRoutes from './routes/auth.route'
 
 const app = express();
 
@@ -9,12 +11,24 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 
+//Routes
+app.use('/api/auth', authRoutes);
+
 // Test Route
-app.get('/', (req, res) => {
-  res.status(200).json({
-    message: 'Welcome to Price-Fight',
-    status: 'success',
-  });
+app.get('/', async (req, res) => {
+  try {
+    const userCount = await prisma.user.count();
+    res.status(200).json({
+      message: 'Welcome to Price-Fight',
+      database: 'Connected to MySQL',
+      userCount: userCount,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: 'Database connection failed',
+      error: error,
+    });
+  }
 });
 
 export default app;
