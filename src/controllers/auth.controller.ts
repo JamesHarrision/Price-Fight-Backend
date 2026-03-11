@@ -167,6 +167,7 @@ export class AuthController {
       return res.status(500).json({
         message: 'Lỗi server nội bộ.',
       });
+    }
   }
 
   public refreshToken = async (req: Request, res: Response) => {
