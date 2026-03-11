@@ -167,6 +167,46 @@ export class AuthController {
       return res.status(500).json({
         message: 'Lỗi server nội bộ.',
       });
+  }
+
+  public refreshToken = async (req: Request, res: Response) => {
+    try {
+      const { refreshToken } = req.body;
+      if (!refreshToken) {
+        return res.status(400).json({ message: 'Vui lòng cung cấp Refresh Token' });
+      }
+
+      const result = await this.authService.refreshToken(refreshToken);
+
+      return res.status(200).json({
+        message: 'Cấp lại Access Token thành công',
+        accessToken: result.accessToken,
+      });
+    } catch (error: any) {
+      if (error.message === 'INVALID_OR_EXPIRED_TOKEN' || error.message === 'INVALID_TOKEN') {
+        return res.status(401).json({ message: 'Refresh token không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại.' });
+      }
+      console.error(error);
+      return res.status(500).json({ message: 'Lỗi server nội bộ' });
+    }
+  }
+
+  public logout = async (req: Request, res: Response): Promise<any> => {
+    try {
+      const { refreshToken } = req.body;
+      if (!refreshToken) {
+        return res.status(400).json({ message: 'Vui lòng cung cấp Refresh Token để đăng xuất' });
+      }
+
+      await this.authService.logout(refreshToken);
+
+      return res.status(200).json({ message: 'Đăng xuất thành công' });
+    } catch (error: any) {
+      console.error(error);
+      if (error.message === "TOKEN_NOT_FOUND") {
+        return res.status(404).json({ message: "KhÔng tìm thấy token" });
+      }
+      return res.status(500).json({ message: 'Lỗi server nội bộ' });
     }
   };
 }

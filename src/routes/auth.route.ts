@@ -12,8 +12,14 @@ router.get('/verify-email', authController.verifyEmail);
 
 router.post('/resend-email', authController.resendEmail);
 
+
 router.post('/forgot-password', authController.forgotPassword);
 
 router.post('/reset-password', authController.resetPassword);
 
+router.post('/refresh-token', authController.refreshToken);
+
+router.post('/logout', authController.logout);
+
 export default router;
+
