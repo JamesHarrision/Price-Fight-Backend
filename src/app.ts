@@ -16,7 +16,6 @@ app.use('/api/auth', authRoutes);
 
 // Test Route
 app.get('/', async (req, res) => {
-  // Thử check kết nối bằng cách đếm user
   try {
     const userCount = await prisma.user.count();
     res.status(200).json({
