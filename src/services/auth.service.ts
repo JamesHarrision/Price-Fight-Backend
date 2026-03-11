@@ -1,16 +1,16 @@
-import { UserRepository } from "../repositories/user.repository";
-import { TokenRepository } from "../repositories/token.repository";
+import { UserRepository } from '../repositories/user.repository';
+import { TokenRepository } from '../repositories/token.repository';
 
-import { passwordUtil } from "../utils/password.util";
-import { tokenUtil } from "../utils/token.util";
+import { passwordUtil } from '../utils/password.util';
+import { tokenUtil } from '../utils/token.util';
 
-import { sendVerificationEmail } from "../utils/mailer.util";
+
+import { sendVerificationEmail, sendPasswordResetOTPEmail } from '../utils/mailer.util';
 import { Role, TokenType } from "@prisma/client";
 
 import jwt from 'jsonwebtoken'
 
 export class AuthService {
-
   private userRepo = new UserRepository();
   private tokenRepo = new TokenRepository();
 
@@ -18,7 +18,7 @@ export class AuthService {
     const { email, password, full_name } = data;
 
     const existingUser = await this.userRepo.getUserByEmail(email);
-    if (existingUser) throw new Error("EMAIL_EXISTS");
+    if (existingUser) throw new Error('EMAIL_EXISTS');
 
     const hashedPassword = await passwordUtil.hash(password);
 
@@ -26,7 +26,7 @@ export class AuthService {
       email: email,
       password: hashedPassword,
       full_name: full_name,
-      balance: 0
+      balance: 0,
     });
 
     const verificationToken = tokenUtil.generateToken();
@@ -35,35 +35,35 @@ export class AuthService {
       token: verificationToken,
       type: TokenType.VERIFICATION,
       expires_at: tokenUtil.getExpiresAt('minutes', 15),
-      user_id: user.id
-    })
+      user_id: user.id,
+    });
 
     try {
       await sendVerificationEmail(user.email, verificationToken);
     } catch (error: any) {
       await this.userRepo.deleteUser(user.id);
-      console.error("Lỗi gửi mail, đã xoá user:", error);
+      console.error('Lỗi gửi mail, đã xoá user:', error);
       throw new Error('EMAIL_SEND_FAILED');
     }
 
     return user;
-  }
+  };
 
   public verifyEmail = async (token: string) => {
     const tokenRecord = await this.tokenRepo.findByToken(token);
     if (!tokenRecord || tokenRecord.type !== TokenType.VERIFICATION) {
-      throw new Error("INVALID_TOKEN");
+      throw new Error('INVALID_TOKEN');
     }
 
     if (tokenRecord.expires_at < new Date()) {
-      throw new Error("TOKEN_EXPIRED");
+      throw new Error('TOKEN_EXPIRED');
     }
 
     await this.userRepo.updateVerificationStatus(tokenRecord.user_id, true);
     await this.tokenRepo.delete(tokenRecord.id);
 
     return true;
-  }
+  };
 
   public resendVerificationEmail = async (email: string) => {
     const user = await this.userRepo.getUserByEmail(email);
@@ -85,12 +85,12 @@ export class AuthService {
     try {
       await sendVerificationEmail(user.email, verificationToken);
     } catch (error) {
-      console.error("Lỗi gửi mail:", error);
+      console.error('Lỗi gửi mail:', error);
       throw new Error('EMAIL_SEND_FAILED');
     }
 
     return true;
-  }
+  };
 
   public login = async (data: any) => {
     const { email, password } = data;
@@ -110,7 +110,7 @@ export class AuthService {
       token: refreshToken,
       type: TokenType.REFRESH,
       expires_at: tokenUtil.getExpiresAt('days', 7),
-      user_id: user.id
+      user_id: user.id,
     });
 
     return {
@@ -118,7 +118,54 @@ export class AuthService {
       refreshToken,
       user: { id: user.id, email: user.email, full_name: user.full_name, role: user.role },
     };
-  }
+  };
+
+  public forgotPassword = async (email: string) => {
+    const user = await this.userRepo.getUserByEmail(email);
+    if (!user) throw new Error('USER_NOT_FOUND');
+
+    const otp = tokenUtil.generateOTP();
+
+    await this.tokenRepo.create({
+      token: otp,
+      type: TokenType.RESET_PASSWORD,
+      expires_at: tokenUtil.getExpiresAt('minutes', 15),
+      user_id: user.id,
+    });
+
+    try {
+      await sendPasswordResetOTPEmail(user.email, otp);
+    } catch (error) {
+      console.error('Lỗi gửi mail OTP: ', error);
+      throw new Error('EMAIL_SEND_FAILED');
+    }
+
+    return true;
+  };
+
+  public resetPassword = async (data: any) => {
+    const { email, otp, newPassword } = data;
+
+    const user = await this.userRepo.getUserByEmail(email);
+    if (!user) throw new Error('USER_NOT_FOUND');
+
+    const tokenRecord = await this.tokenRepo.findValidOTP(user.id, otp, TokenType.RESET_PASSWORD);
+    if (!tokenRecord) {
+      throw new Error('INVALID_OTP');
+    }
+
+    if (tokenRecord.expires_at < new Date()) {
+      await this.tokenRepo.delete(tokenRecord.id);
+      throw new Error('OTP_EXPIRED');
+    }
+
+    const hashedPassword = await passwordUtil.hash(newPassword);
+    await this.userRepo.updatePassword(user.id, hashedPassword);
+
+    await this.tokenRepo.delete(tokenRecord.id);
+
+    return true;
+  };
 
   // Cấp lại Access Token mới
   public refreshToken = async (refreshToken: string) => {
@@ -152,3 +199,4 @@ export class AuthService {
     await this.tokenRepo.delete(tokenRecord.id);
   }
 }
+

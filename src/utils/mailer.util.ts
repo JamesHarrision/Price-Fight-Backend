@@ -1,5 +1,5 @@
-import nodemailer from 'nodemailer'
-import dotenv from 'dotenv'
+import nodemailer from 'nodemailer';
+import dotenv from 'dotenv';
 
 dotenv.config();
 
@@ -29,4 +29,21 @@ export const sendVerificationEmail = async (to: string, token: string) => {
   };
 
   await transporter.sendMail(mailOptions);
-}
+};
+
+export const sendPasswordResetOTPEmail = async (to: string, otp: string) => {
+  const mailOptions = {
+    from: `"Price Fight" <${process.env.EMAIL_USER}>`,
+    to,
+    subject: 'Mã OTP đặt lại mật khẩu của bạn',
+    html: `
+      <h2>Yêu cầu đặt lại mật khẩu</h2>
+      <p>Bạn đã yêu cầu đặt lại mật khẩu cho tài khoản Price Fight.</p>
+      <p>Mã OTP của bạn là: <b style="font-size: 24px; color: #4CAF50; letter-spacing: 2px;">${otp}</b></p>
+      <p>Mã này sẽ hết hạn trong vòng 15 phút. Vui lòng không chia sẻ mã này với bất kỳ ai.</p>
+      <p>Nếu bạn không yêu cầu, vui lòng bỏ qua email này.</p>
+    `,
+  };
+
+  await transporter.sendMail(mailOptions);
+};
