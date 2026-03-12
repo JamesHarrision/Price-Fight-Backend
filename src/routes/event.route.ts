@@ -9,6 +9,10 @@ const eventController = new EventController();
 
 router.post('/', authenticate, authorizedAdmin, cloudinaryUpload.single("cover_image"), eventController.createEvent);
 
-router.post('/', authenticate, authorizedAdmin, cloudinaryUpload.single("cover_image"), eventController.createEvent);
+router.put('/:eventId', authenticate, authorizedAdmin, cloudinaryUpload.single("cover_image"), eventController.updateEvent);
+
+router.delete('/:eventId', authenticate, authorizedAdmin, eventController.deleteEvent);
+
+router.get('/:eventId', eventController.findEvent);
 
 export default router;
