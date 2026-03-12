@@ -1,24 +1,24 @@
 import { Router } from 'express';
 import { ItemController } from '../controllers/item.controller';
-import { authenticate, authorizeAdmin } from '../middlewares/auth.middleware';
-import { uploadCloud } from '../config/cloudinary.config';
+import { authenticate, authorizedAdmin } from '../middlewares/auth.middleware';
+import { cloudinaryUpload } from '../config/cloudinary.config';
 
 const router = Router();
 const itemController = new ItemController();
 
-const uploadItemImages = uploadCloud.fields([
+const uploadItemImages = cloudinaryUpload.fields([
   { name: 'primary_image', maxCount: 1 },
   { name: 'images', maxCount: 5 },
 ]);
 
 router.get('/events/:eventId/items', itemController.getItemsByEvent);
 
-router.get('/items/:id', itemController.getItemDetail);
+router.get('/items/:itemId', itemController.getItemDetail);
 
-router.post('/events/:eventId/items', authenticate, authorizeAdmin, uploadItemImages, itemController.createItem);
+router.post('/events/:eventId/items', authenticate, authorizedAdmin, uploadItemImages, itemController.createItem);
 
-router.put('/items/:id', authenticate, authorizeAdmin, uploadItemImages, itemController.updateItem);
+router.put('/items/:itemId', authenticate, authorizedAdmin, uploadItemImages, itemController.updateItem);
 
-router.delete('/items/:id', authenticate, authorizeAdmin, itemController.deleteItem);
+router.delete('/items/:itemId', authenticate, authorizedAdmin, itemController.deleteItem);
 
 export default router;
