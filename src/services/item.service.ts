@@ -7,7 +7,7 @@ export class ItemService {
   private eventRepo = new EventRepository();
 
   public getItemsByEvent = async (eventId: string, page: number = 1, limit: number = 5) => {
-    const event = await this.eventRepo.getEventById(eventId);
+    const event = await this.eventRepo.findById(eventId);
     if (!event) {
       throw new Error('EVENT_NOT_FOUND');
     }
@@ -36,7 +36,7 @@ export class ItemService {
   };
 
   public createItem = async (eventId: string, data: any) => {
-    const event = await this.eventRepo.getEventById(eventId);
+    const event = await this.eventRepo.findById(eventId);
     if (!event) {
       throw new Error('EVENT_NOT_FOUND');
     }
