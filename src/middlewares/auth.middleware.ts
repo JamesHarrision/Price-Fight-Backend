@@ -1,5 +1,7 @@
-import { NextFunction, Request, Response } from 'express';
-import jwt from 'jsonwebtoken';
+import { Role } from '@prisma/client';
+import { NextFunction, Request, Response } from 'express'
+import jwt from 'jsonwebtoken'
+
 
 export interface AuthRequest extends Request {
   user?: any;
@@ -22,18 +24,23 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
   }
 };
 
-export const authorizeAdmin = (req: AuthRequest, res: Response, next: NextFunction) => {
-  if (!req.user) {
-    return res.status(401).json({
-      message: 'Vui lòng đăng nhập!',
-    });
-  }
 
-  if (req.user.role !== 'ADMIN') {
-    return res.status(403).json({
-      message: 'Bạn không có quyền thực hiện hành động này!',
-    });
-  }
+export const authorizedAdmin = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user) {
+        return res.status(401).json({
+          message: 'Vui lòng đăng nhập!',
+        });
+    }
 
-  next();
-};
+    if (req.user.role !== Role.ADMIN) {
+      return res.status(403).json({ message: "Bạn không có quyền thực hiện hành động này! Chỉ admin mới có quyền này" });
+    }
+
+    next();
+  } catch (error: any) {
+    console.log(error);
+    return res.status(500).json({ message: "Lỗi nội bộ của server" });
+  }
+}
+

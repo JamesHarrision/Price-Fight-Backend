@@ -1,9 +1,6 @@
 import { v2 as cloudinary } from 'cloudinary';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import multer from 'multer';
-import dotenv from 'dotenv';
-
-dotenv.config();
 
 cloudinary.config({
   cloud_name: process.env.CLOUD_NAME,
@@ -15,11 +12,18 @@ const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: async (req, file) => {
     return {
-      folder: 'price_fight_items', // Tên thư mục trên Cloudinary
+      folder: 'price_fight_files', // Tên thư mục trên Cloudinary
       allowed_formats: ['jpg', 'png', 'jpeg', 'webp'], // Chỉ cho phép các định dạng này
       transformation: [{ width: 500, height: 500, crop: 'limit' }], // Tự động resize cho nhẹ
     };
   },
 });
 
-export const uploadCloud = multer({ storage });
+// 3. Export Multer Middleware
+export const cloudinaryUpload = multer({
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // Giới hạn 5MB
+});
+
+
+// Lấy file ra từ req.file
