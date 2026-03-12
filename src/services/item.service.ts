@@ -1,5 +1,6 @@
 import { EventRepository } from '../repositories/event.repository';
 import { ItemRepository } from '../repositories/item.repository';
+import { deleteImageFromCloudinary } from '../utils/cloudinary.util';
 
 export class ItemService {
   private itemRepo = new ItemRepository();
@@ -79,6 +80,15 @@ export class ItemService {
       throw new Error('ITEM_NOT_WAITING');
     }
 
+    if (item.primary_image) {
+      await deleteImageFromCloudinary(item.primary_image);
+    }
+
+    if (item.images && Array.isArray(item.images)) {
+      for (const imageUrl of item.images) {
+        await deleteImageFromCloudinary(imageUrl as string);
+      }
+    }
     await this.itemRepo.deleteItem(itemId);
 
     return true;
