@@ -1,3 +1,4 @@
+import { Role } from '@prisma/client';
 import { NextFunction, Request, Response } from 'express'
 import jwt from 'jsonwebtoken'
 
@@ -19,5 +20,18 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
     next();
   } catch (error) {
     return res.status(401).json({ message: 'Access Token đã hết hạn hoặc không hợp lệ.' });
+  }
+}
+
+export const authorizedAdmin = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    if (req.user.role !== Role.ADMIN) {
+      return res.status(403).json({ message: "Ko có quyền! Chỉ admin mới có quyền này" });
+    }
+
+    next();
+  } catch (error: any) {
+    console.log(error);
+    return res.status(500).json({ message: "Lỗi nội bộ của server" });
   }
 }
