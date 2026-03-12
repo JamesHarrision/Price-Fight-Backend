@@ -6,13 +6,24 @@ export class ItemService {
   private itemRepo = new ItemRepository();
   private eventRepo = new EventRepository();
 
-  public getItemsByEvent = async (eventId: string) => {
+  public getItemsByEvent = async (eventId: string, page: number = 1, limit: number = 5) => {
     const event = await this.eventRepo.getEventById(eventId);
     if (!event) {
       throw new Error('EVENT_NOT_FOUND');
     }
 
-    return await this.itemRepo.getItemsByEventId(eventId);
+    const skip = (page - 1) * limit;
+
+    const { items, total } = await this.itemRepo.getItemsByEventId(eventId, skip, limit);
+    return {
+      data: items,
+      pagination: {
+        total_items: total,
+        total_pages: Math.ceil(total / limit),
+        current_page: page,
+        limit: limit,
+      },
+    };
   };
 
   public getItemDetail = async (itemId: string) => {
