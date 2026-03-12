@@ -48,7 +48,7 @@ export class EventController {
         cover_image = req.file.path;
       }
 
-      const updateData: any = { title, description, start_time, end_time };
+      const updateData: any = { title, description, start_time, end_time, cover_image };
       Object.keys(updateData).forEach(key => updateData[key] === undefined && delete updateData[key]);
 
       const event = await this.eventService.updateEvent(
