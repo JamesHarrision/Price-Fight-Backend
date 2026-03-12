@@ -2,8 +2,10 @@ import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import { prisma } from './config/prisma.config';
-import authRoutes from './routes/auth.route'
+import authRoutes from './routes/auth.route';
+import itemRoutes from './routes/item.route';
 import eventRoutes from './routes/event.route'
+
 
 const app = express();
 
@@ -14,6 +16,7 @@ app.use(express.json());
 
 //Routes
 app.use('/api/auth', authRoutes);
+app.use('/api', itemRoutes);
 app.use('/api/events', eventRoutes)
 
 // Test Route

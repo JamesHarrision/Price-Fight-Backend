@@ -2,13 +2,14 @@ import { Role } from '@prisma/client';
 import { NextFunction, Request, Response } from 'express'
 import jwt from 'jsonwebtoken'
 
+
 export interface AuthRequest extends Request {
-  user?: any
+  user?: any;
 }
 
 export const authenticate = async (req: AuthRequest, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ message: 'Không tìm thấy Access Token. Vui lòng đăng nhập.' });
   }
 
@@ -21,12 +22,19 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
   } catch (error) {
     return res.status(401).json({ message: 'Access Token đã hết hạn hoặc không hợp lệ.' });
   }
-}
+};
+
 
 export const authorizedAdmin = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
+    if (!req.user) {
+        return res.status(401).json({
+          message: 'Vui lòng đăng nhập!',
+        });
+    }
+
     if (req.user.role !== Role.ADMIN) {
-      return res.status(403).json({ message: "Ko có quyền! Chỉ admin mới có quyền này" });
+      return res.status(403).json({ message: "Bạn không có quyền thực hiện hành động này! Chỉ admin mới có quyền này" });
     }
 
     next();
@@ -35,3 +43,4 @@ export const authorizedAdmin = async (req: AuthRequest, res: Response, next: Nex
     return res.status(500).json({ message: "Lỗi nội bộ của server" });
   }
 }
+
