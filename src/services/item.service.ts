@@ -72,8 +72,21 @@ export class ItemService {
     const updateData: any = {};
     if (data.name) updateData.name = data.name;
     if (data.description) updateData.description = data.description;
-    if (data.primary_image) updateData.primary_image = data.primary_image;
-    if (data.images) updateData.images = data.images;
+    if (data.primary_image) {
+      updateData.primary_image = data.primary_image;
+      if (item.primary_image) {
+        await deleteImageFromCloudinary(item.primary_image);
+      }
+    }
+    if (data.images) {
+      updateData.images = data.images;
+      if (item.images && Array.isArray(item.images)) {
+        for (const oldImageUrl of item.images) {
+          await deleteImageFromCloudinary(oldImageUrl as string);
+        }
+      }
+    }
+
     if (data.start_price) updateData.start_price = Number(data.start_price);
     if (data.step_price) updateData.step_price = Number(data.step_price);
 
