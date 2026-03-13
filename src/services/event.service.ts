@@ -38,15 +38,15 @@ export class EventService {
     if (!existingEvent) throw new Error('EVENT_NOT_FOUND');
 
     const items = (await this.itemRepo.getItemsByEventId(id)).items;
-    await Promise.all(
-      items.map(async (item) => {
-        const imagesToDelete: string[] = [];
-        if (item.images) {
-          imagesToDelete.push(...(item.images as string[]));
-        }
-        await Promise.all(imagesToDelete.map(async (image) => deleteImageFromCloudinary(image)));
-      }),
-    );
+    await Promise.all((items).map(async (item) => {
+      const imagesToDelete: string[] = [];
+      if (item.images) {
+        imagesToDelete.push(...item.images as string[]);
+      }
+      await Promise.all(
+        imagesToDelete.map(async (image) => deleteImageFromCloudinary(image))
+      )
+    }));
 
     if (existingEvent.cover_image) {
       await deleteImageFromCloudinary(existingEvent.cover_image);
