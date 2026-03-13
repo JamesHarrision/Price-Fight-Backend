@@ -41,4 +41,13 @@ export class ItemRepository {
       where: { id: itemId },
     });
   };
+
+  public getItemByWinnerId = async (eventId: string, userId: string) => {
+    return await prisma.auctionItem.findFirst({
+      where: {
+        event_id: eventId,
+        winner_id: userId
+      }
+    })
+  }
 }

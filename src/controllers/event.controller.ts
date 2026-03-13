@@ -103,4 +103,28 @@ export class EventController {
       return res.status(500).json({ message: "Lỗi server" });
     }
   }
+
+  public kickUser = async (req: AuthRequest, res: Response) => {
+    try {
+      const { eventId, userId } = req.params;
+      // Nếu user tự thoát thì userId = req.user.id
+      // Nếu Admin đá user thì lấy userId từ params
+
+      await this.eventService.removeUserFromEvent(eventId as string, userId as string);
+
+      return res.status(200).json({ message: "Đã rời khỏi sự kiện thành công" });
+    } catch (error: any) {
+      if (error.message === 'CANNOT_REMOVE_WINNER') {
+        return res.status(400).json({ message: "Không thể xóa: Người dùng đang là người thắng cuộc của vật phẩm trong sự kiện này." });
+      }
+      if (error.message === 'CANNOT_REMOVE_BIDDER') {
+        return res.status(400).json({ message: "Không thể xóa: Người dùng đã tham gia đấu giá trong sự kiện này." });
+      }
+      if (error.message === 'PARTICIPANT_NOT_FOUND') {
+        return res.status(404).json({ message: "Người dùng chưa tham gia sự kiện này." });
+      }
+
+      return res.status(500).json({ message: "Lỗi server" });
+    }
+  }
 }

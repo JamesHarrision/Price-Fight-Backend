@@ -1,3 +1,4 @@
+import { BidRepository } from '../repositories/bid.repository';
 import { EventRepository } from '../repositories/event.repository';
 import { ItemRepository } from '../repositories/item.repository';
 import { deleteImageFromCloudinary } from '../utils/cloudinary.util';
@@ -5,6 +6,7 @@ import { deleteImageFromCloudinary } from '../utils/cloudinary.util';
 export class EventService {
   private eventRepo = new EventRepository();
   private itemRepo = new ItemRepository();
+  private bidRepo = new BidRepository();
 
   public createEvent = async (data: any) => {
     if (new Date(data.start_time) < new Date()) throw new Error('INVALID_START_TIME_PAST');
@@ -61,4 +63,18 @@ export class EventService {
 
     return await this.eventRepo.findById(id);
   };
+
+  public removeUserFromEvent = async (eventId: string, userId: string) => {
+    const isWinner = await this.itemRepo.getItemByWinnerId(eventId, userId);
+    if (!isWinner) throw new Error('CANNOT_REMOVE_WINNER');
+
+    const hasBids = await this.bidRepo.getBidByUserAndEvent(userId, eventId);
+    if (hasBids) throw new Error('CANNOT_REMOVE_BIDDER');
+
+    const participant = await this.eventRepo.getEventUserById(eventId, userId);
+    if (!participant) throw new Error('PARTICIPANT_NOT_FOUND');
+
+    await this.eventRepo.kickUserOutEvent(eventId, userId);
+    return true;
+  }
 }
