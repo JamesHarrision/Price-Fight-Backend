@@ -13,12 +13,13 @@ const uploadItemImages = cloudinaryUpload.fields([
 
 router.get('/events/:eventId/items', itemController.getItemsByEvent);
 
-router.get('/items/:id', itemController.getItemDetail);
+router.get('/items/:itemId', itemController.getItemDetail);
 
 router.post('/events/:eventId/items', authenticate, authorizedAdmin, uploadItemImages, itemController.createItem);
 
-router.put('/items/:id', authenticate, authorizedAdmin, uploadItemImages, itemController.updateItem);
+router.put('/items/:itemId', authenticate, authorizedAdmin, uploadItemImages, itemController.updateItem);
 
-router.delete('/items/:id', authenticate, authorizedAdmin, itemController.deleteItem);
+router.delete('/items/:itemId', authenticate, authorizedAdmin, itemController.deleteItem);
+
 
 export default router;

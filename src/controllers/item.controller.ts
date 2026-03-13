@@ -51,8 +51,9 @@ export class ItemController {
       const { eventId } = req.params;
 
       const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-      const primary_image = files?.['primary_image']?.[0]?.path; // Lấy URL ảnh chính
+      
       const images = files?.['images']?.map((file) => file.path); // Lấy mảng URL ảnh phụ
+      const primary_image = files?.['images']?.[0]?.path; // Lấy URL ảnh chính
 
       const itemData = {
         ...req.body,

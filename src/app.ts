@@ -5,7 +5,7 @@ import { prisma } from './config/prisma.config';
 import authRoutes from './routes/auth.route';
 import itemRoutes from './routes/item.route';
 import eventRoutes from './routes/event.route'
-
+import userRoutes from './routes/user.route'
 
 const app = express();
 
@@ -18,6 +18,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api', itemRoutes);
 app.use('/api/events', eventRoutes)
+app.use('/api/users', userRoutes);
 
 // Test Route
 app.get('/', async (req, res) => {

@@ -40,4 +40,11 @@ export class UserRepository {
       },
     });
   };
+
+  public updateUser = async (userId: string, data: any) => {
+    return await prisma.user.update({
+      where: { id: userId },
+      data: data
+    })
+  }
 }
