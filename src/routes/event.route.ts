@@ -15,6 +15,6 @@ router.delete('/:eventId', authenticate, authorizedAdmin, eventController.delete
 
 router.get('/:eventId', eventController.findEvent);
 
-router.delete("/:eventId/participants/:userId", authenticate, authorizedAdmin, eventController.kickUser)
+router.delete("/:eventId/participants/:userId", authenticate, eventController.kickUser)
 
 export default router;

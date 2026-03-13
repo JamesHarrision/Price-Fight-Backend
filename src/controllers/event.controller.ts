@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { AuthRequest } from "../middlewares/auth.middleware";
 import { EventService } from "../services/event.service";
+import { Role } from "@prisma/client";
 
 export class EventController {
 
@@ -107,8 +108,13 @@ export class EventController {
   public kickUser = async (req: AuthRequest, res: Response) => {
     try {
       const { eventId, userId } = req.params;
+      const currentUser = req.user;
       // Nếu user tự thoát thì userId = req.user.id
       // Nếu Admin đá user thì lấy userId từ params
+
+      if (currentUser.role !== Role.ADMIN && currentUser.id !== userId) {
+        return res.status(403).json({ message: "Bạn không có quyền đuổi người dùng khỏi sự kiện" });
+      }
 
       await this.eventService.removeUserFromEvent(eventId as string, userId as string);
 
