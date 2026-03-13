@@ -74,7 +74,7 @@ export class EventService {
     }
 
     const isJoined = await this.eventRepo.checkParticipant(eventId, userId);
-    if (!isJoined) {
+    if (isJoined) {
       throw new Error('ALREADY_JOINED');
     }
 
