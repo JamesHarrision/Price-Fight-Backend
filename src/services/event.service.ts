@@ -37,7 +37,7 @@ export class EventService {
     const existingEvent = await this.eventRepo.findById(id);
     if (!existingEvent) throw new Error("EVENT_NOT_FOUND");
 
-    const items = await this.itemRepo.getItemsByEventId(id);
+    const items = (await this.itemRepo.getItemsByEventId(id)).items;
     await Promise.all((items).map(async (item) => {
       const imagesToDelete: string[] = [];
       if (item.images) {
