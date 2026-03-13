@@ -7,7 +7,10 @@ export class ItemController {
   public getItemsByEvent = async (req: Request, res: Response) => {
     try {
       const { eventId } = req.params;
-      const items = await this.itemService.getItemsByEvent(eventId as string);
+
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 5;
+      const items = await this.itemService.getItemsByEvent(eventId as string, page, limit);
 
       return res.status(200).json({ items });
     } catch (error: any) {
