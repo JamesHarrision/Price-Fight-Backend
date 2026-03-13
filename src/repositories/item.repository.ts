@@ -46,8 +46,25 @@ export class ItemRepository {
     return await prisma.auctionItem.findFirst({
       where: {
         event_id: eventId,
-        winner_id: userId
-      }
-    })
-  }
+        winner_id: userId,
+      },
+    });
+  };
+
+  public getInventoryItems = async (skip?: number, take?: number) => {
+    const [items, total] = await Promise.all([
+      prisma.auctionItem.findMany({
+        where: { event_id: null },
+        orderBy: { name: 'asc' },
+        skip: skip,
+        take: take,
+      }),
+
+      prisma.auctionItem.count({
+        where: { event_id: null },
+      }),
+    ]);
+
+    return { items, total };
+  };
 }

@@ -36,16 +36,17 @@ export class ItemService {
   };
 
   public createItem = async (eventId: string, data: any) => {
-    const event = await this.eventRepo.findById(eventId);
-    if (!event) {
-      throw new Error('EVENT_NOT_FOUND');
+    if (eventId) {
+      const event = await this.eventRepo.findById(eventId);
+      if (!event) {
+        throw new Error('EVENT_NOT_FOUND');
+      }
+      if (event.status !== 'PENDING') {
+        throw new Error('EVENT_NOT_PENDING');
+      }
     }
-    if (event.status !== 'PENDING') {
-      throw new Error('EVENT_NOT_PENDING');
-    }
-
     const newItemData = {
-      event_id: eventId,
+      event_id: eventId || null,
       name: data.name,
       description: data.description || null,
       primary_image: data.primary_image || null,
@@ -72,6 +73,9 @@ export class ItemService {
     const updateData: any = {};
     if (data.name) updateData.name = data.name;
     if (data.description) updateData.description = data.description;
+    if (data.event_id !== undefined) {
+      updateData.event_id = data.event_id ? data.event_id : null;
+    }
     if (data.primary_image) {
       updateData.primary_image = data.primary_image;
       if (item.primary_image) {
@@ -116,5 +120,20 @@ export class ItemService {
     await this.itemRepo.deleteItem(itemId);
 
     return true;
+  };
+
+  public getInventoryItems = async (page: number = 1, limit: number = 5) => {
+    const skip = (page - 1) * limit;
+    const { items, total } = await this.itemRepo.getInventoryItems(skip, limit);
+
+    return {
+      data: items,
+      pagination: {
+        total_items: total,
+        total_pages: Math.ceil(total / limit),
+        current_page: page,
+        limit: limit,
+      },
+    };
   };
 }
