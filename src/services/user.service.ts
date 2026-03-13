@@ -1,4 +1,5 @@
 import { UserRepository } from "../repositories/user.repository";
+import { deleteImageFromCloudinary } from "../utils/cloudinary.util";
 
 export class UserService {
   private userRepo = new UserRepository();
@@ -14,6 +15,10 @@ export class UserService {
   public updateMe = async (userId: string, data: any) => {
     const user = await this.userRepo.getUserById(userId);
     if (!user) throw new Error('USER_NOT_FOUND');
+
+    if (user.avatar_url && data.avatar_url) {
+      await deleteImageFromCloudinary(user.avatar_url);
+    }
 
     const updatedUser = await this.userRepo.updateUser(userId, data);
     const { password, ...userWithoutPassword } = updatedUser;
