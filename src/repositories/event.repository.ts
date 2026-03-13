@@ -46,4 +46,24 @@ export class EventRepository {
       },
     });
   };
+
+  public getEventUserById = async (eventId: string, userId: string) => {
+    return await prisma.eventParticipant.findUnique({
+      where: {
+        event_id_user_id: { event_id: eventId, user_id: userId }
+      }
+    });
+  }
+
+  public kickUserOutEvent = async (eventId: string, userId: string) => {
+    return await prisma.eventParticipant.delete({
+      where: {
+        event_id_user_id: {
+          event_id: eventId,
+          user_id: userId
+        }
+      }
+    })
+  }
+
 }

@@ -1,3 +1,4 @@
+import { BidRepository } from '../repositories/bid.repository';
 import { EventRepository } from '../repositories/event.repository';
 import { ItemRepository } from '../repositories/item.repository';
 import { deleteImageFromCloudinary } from '../utils/cloudinary.util';
@@ -6,6 +7,7 @@ import { UserRepository } from '../repositories/user.repository';
 export class EventService {
   private eventRepo = new EventRepository();
   private itemRepo = new ItemRepository();
+  private bidRepo = new BidRepository();
   private userRepo = new UserRepository();
 
   public createEvent = async (data: any) => {
@@ -64,6 +66,19 @@ export class EventService {
     return await this.eventRepo.findById(id);
   };
 
+  public removeUserFromEvent = async (eventId: string, userId: string) => {
+    const isWinner = await this.itemRepo.getItemByWinnerId(eventId, userId);
+    if (isWinner) throw new Error('CANNOT_REMOVE_WINNER');
+
+    const hasBids = await this.bidRepo.getBidByUserAndEvent(userId, eventId);
+    if (hasBids) throw new Error('CANNOT_REMOVE_BIDDER');
+
+    const participant = await this.eventRepo.getEventUserById(eventId, userId);
+    if (!participant) throw new Error('PARTICIPANT_NOT_FOUND');
+
+    await this.eventRepo.kickUserOutEvent(eventId, userId);
+    return true;
+  }
   public joinEvent = async (eventId: string, userId: string) => {
     const event = await this.eventRepo.findById(eventId);
     if (!event) {
