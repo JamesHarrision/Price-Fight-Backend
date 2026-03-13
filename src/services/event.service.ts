@@ -1,10 +1,12 @@
 import { EventRepository } from '../repositories/event.repository';
 import { ItemRepository } from '../repositories/item.repository';
 import { deleteImageFromCloudinary } from '../utils/cloudinary.util';
+import { UserRepository } from '../repositories/user.repository';
 
 export class EventService {
   private eventRepo = new EventRepository();
   private itemRepo = new ItemRepository();
+  private userRepo = new UserRepository();
 
   public createEvent = async (data: any) => {
     if (new Date(data.start_time) < new Date()) throw new Error('INVALID_START_TIME_PAST');
@@ -38,15 +40,15 @@ export class EventService {
     if (!existingEvent) throw new Error('EVENT_NOT_FOUND');
 
     const items = (await this.itemRepo.getItemsByEventId(id)).items;
-    await Promise.all((items).map(async (item) => {
-      const imagesToDelete: string[] = [];
-      if (item.images) {
-        imagesToDelete.push(...item.images as string[]);
-      }
-      await Promise.all(
-        imagesToDelete.map(async (image) => deleteImageFromCloudinary(image))
-      )
-    }));
+    await Promise.all(
+      items.map(async (item) => {
+        const imagesToDelete: string[] = [];
+        if (item.images) {
+          imagesToDelete.push(...(item.images as string[]));
+        }
+        await Promise.all(imagesToDelete.map(async (image) => deleteImageFromCloudinary(image)));
+      }),
+    );
 
     if (existingEvent.cover_image) {
       await deleteImageFromCloudinary(existingEvent.cover_image);
@@ -60,5 +62,36 @@ export class EventService {
     if (!existingEvent) throw new Error('EVENT_NOT_FOUND');
 
     return await this.eventRepo.findById(id);
+  };
+
+  public joinEvent = async (eventId: string, userId: string) => {
+    const event = await this.eventRepo.findById(eventId);
+    if (!event) {
+      throw new Error('EVENT_NOT_FOUND');
+    }
+    if (event.status === 'ENDED') {
+      throw new Error('EVENT_ENDED');
+    }
+
+    const isJoined = await this.eventRepo.checkParticipant(eventId, userId);
+    if (!isJoined) {
+      throw new Error('ALREADY_JOINED');
+    }
+
+    const user = await this.userRepo.getUserById(userId);
+    if (!user) {
+      throw new Error('USER_NOT_FOUND');
+    }
+
+    const { items } = await this.itemRepo.getItemsByEventId(eventId);
+    if (items.length > 0) {
+      const minPrice = Math.min(...items.map((item) => Number(item.start_price)));
+
+      if (Number(user.balance) < minPrice) {
+        throw new Error(`INSUFFICIENT_BALANCE:${minPrice}`);
+      }
+    }
+
+    return await this.eventRepo.addParticipant(eventId, userId);
   };
 }
