@@ -35,7 +35,7 @@ export class ItemService {
     return item;
   };
 
-  public createItem = async (eventId: string, data: any) => {
+  public createItem = async (data: any, eventId?: string) => {
     if (eventId) {
       const event = await this.eventRepo.findById(eventId);
       if (!event) {
