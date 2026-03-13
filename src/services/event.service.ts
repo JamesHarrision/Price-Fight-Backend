@@ -68,7 +68,7 @@ export class EventService {
 
   public removeUserFromEvent = async (eventId: string, userId: string) => {
     const isWinner = await this.itemRepo.getItemByWinnerId(eventId, userId);
-    if (!isWinner) throw new Error('CANNOT_REMOVE_WINNER');
+    if (isWinner) throw new Error('CANNOT_REMOVE_WINNER');
 
     const hasBids = await this.bidRepo.getBidByUserAndEvent(userId, eventId);
     if (hasBids) throw new Error('CANNOT_REMOVE_BIDDER');
