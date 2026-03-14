@@ -46,7 +46,7 @@ export class BidService {
     }
 
     // 3
-    const { newBid, updatedItem } = await this.bidRepo.placeBidTransaction(itemId, eventId, amount);
+    const { newBid, updatedItem } = await this.bidRepo.placeBidTransaction(itemId, userId, amount);
 
     // 4
     try {

@@ -13,6 +13,11 @@ export class BidRepository {
   };
 
   public placeBidTransaction = async (itemId: string, userId: string, amount: number) => {
+    console.log('=== KIỂM TRA DỮ LIỆU ĐẦU VÀO ===');
+    console.log('1. Item ID:', itemId);
+    console.log('2. User ID:', userId);
+    console.log('3. Amount:', amount);
+    console.log('===============================');
     return await prisma.$transaction(async (tx) => {
       const newBid = await tx.bidHistory.create({
         data: {
