@@ -89,7 +89,7 @@ model AuctionEvent {
 // Bảng auction_items (Vật phẩm đấu giá)
 model AuctionItem {
   id            String     @id @default(uuid())
-  event_id      String
+  event_id      String?
   name          String
   description   String?    @db.Text // [BỔ SUNG] Thông tin mô tả chi tiết vật phẩm
   primary_image String? // [BỔ SUNG] Ảnh đại diện chính của vật phẩm
@@ -100,7 +100,7 @@ model AuctionItem {
   winner_id     String?
   status        ItemStatus @default(WAITING)
 
-  event        AuctionEvent  @relation(fields: [event_id], references: [id], onDelete: Cascade)
+  event        AuctionEvent? @relation(fields: [event_id], references: [id], onDelete: SetNull)
   winner       User?         @relation("ItemWinner", fields: [winner_id], references: [id])
   bids         BidHistory[]
   transactions Transaction[]
@@ -114,8 +114,8 @@ model EventParticipant {
   user_id   String
   joined_at DateTime @default(now())
 
-  event AuctionEvent @relation(fields: [event_id], references: [id], onDelete: Cascade)
-  user  User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  event AuctionEvent? @relation(fields: [event_id], references: [id], onDelete: Cascade)
+  user  User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@id([event_id, user_id])
   @@map("event_participants")
