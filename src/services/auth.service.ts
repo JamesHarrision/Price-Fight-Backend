@@ -9,6 +9,7 @@ import { sendVerificationEmail, sendPasswordResetOTPEmail } from '../utils/maile
 import { Role, TokenType } from "@prisma/client";
 
 import jwt from 'jsonwebtoken'
+import { getDate } from '../utils/day.util';
 
 export class AuthService {
   private userRepo = new UserRepository();
@@ -55,7 +56,7 @@ export class AuthService {
       throw new Error('INVALID_TOKEN');
     }
 
-    if (tokenRecord.expires_at < new Date()) {
+    if (tokenRecord.expires_at < getDate()) {
       throw new Error('TOKEN_EXPIRED');
     }
 
@@ -72,7 +73,7 @@ export class AuthService {
 
     // Tạo token mới
     const verificationToken = tokenUtil.generateToken();
-    const expiresAt = new Date();
+    const expiresAt = getDate();
     expiresAt.setHours(expiresAt.getHours() + 24);
 
     await this.tokenRepo.create({
@@ -154,7 +155,7 @@ export class AuthService {
       throw new Error('INVALID_OTP');
     }
 
-    if (tokenRecord.expires_at < new Date()) {
+    if (tokenRecord.expires_at < getDate()) {
       await this.tokenRepo.delete(tokenRecord.id);
       throw new Error('OTP_EXPIRED');
     }

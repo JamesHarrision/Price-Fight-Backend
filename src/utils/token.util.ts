@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import { getDate } from './day.util';
 
 const JWT_ACCESS_EXPIRES_IN = '15m';
 const JWT_REFRESH_EXPIRES_IN = '7d';
@@ -26,7 +27,7 @@ export const tokenUtil = {
   },
 
   getExpiresAt: (unit: 'hours' | 'days' | 'minutes', amount: number): Date => {
-    const date = new Date();
+    const date = getDate();
     if (unit === 'minutes') date.setMinutes(date.getMinutes() + amount);
     if (unit === 'hours') date.setHours(date.getHours() + amount);
     if (unit === 'days') date.setDate(date.getDate() + amount);
