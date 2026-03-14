@@ -41,7 +41,7 @@ export class LifeCycleService {
           //. Đẩy dữ liệu lên Firebase
           const firebasePath = `events/${event.id}`;
           console.log(firebasePath, firebasePayload);
-          await FirebaseUtils.pushData(firebasePath, firebasePayload);
+          await FirebaseUtils.setData(firebasePath, firebasePayload);
           console.log(`[Firebase] Đã khởi tạo node cho sự kiện ${event.id}`);
 
           //. Cập nhật trạng thái MySQL (Dùng Transaction để đảm bảo an toàn)

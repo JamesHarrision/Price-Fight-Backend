@@ -45,16 +45,24 @@ export class BidController {
           message: 'Vật phẩm không tồn tại trong sự kiện.',
         });
       }
+      if (error.message === 'INSUFFICIENT_BALANCE') {
+        return res.status(400).json({
+          message: 'Số dư ví của bạn không đủ để đặt mức giá này.',
+        });
+      }
+
+      // === CÁC LỖI TỪ FIREBASE TRANSACTION ===
       if (error.message.startsWith('INVALID_AMOUNT')) {
         const minPrice = error.message.split(':')[1];
         return res.status(400).json({
           message: `Giá đặt không hợp lệ! Bạn phải đặt mức giá tối thiểu là ${Number(minPrice).toLocaleString('vi-VN')}đ`,
         });
       }
-      if (error.message === 'INSUFFICIENT_BALANCE') {
-        return res.status(400).json({
-          message: 'Số dư ví của bạn không đủ để đặt mức giá này.',
-        });
+      if (error.message === 'FIREBASE_NODE_NOT_FOUND') {
+        return res.status(400).json({ message: 'Phòng đấu giá đang được khởi tạo, vui lòng thử lại sau vài giây!' });
+      }
+      if (error.message === 'RACE_CONDITION_FAILED') {
+        return res.status(409).json({ message: 'Hệ thống đang bận do có quá nhiều người đặt giá cùng lúc. Vui lòng thử lại!' });
       }
       console.error(error);
       return res.status(500).json({
