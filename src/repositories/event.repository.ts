@@ -1,5 +1,6 @@
-import { Prisma } from '@prisma/client';
+import { EventStatus, Prisma } from '@prisma/client';
 import { prisma } from '../config/prisma.config';
+import { getDate } from '../utils/day.util';
 
 export class EventRepository {
   public create = async (data: Prisma.AuctionEventCreateInput) => {
@@ -93,5 +94,19 @@ export class EventRepository {
         limit: limit
       }
     }
+  }
+
+  public getPendingEvents = async () => {
+    return await prisma.auctionEvent.findMany({
+      where: {
+        status: EventStatus.PENDING,
+        start_time: {
+          lte: getDate()
+        }
+      },
+      include: {
+        items: true
+      }
+    });
   }
 }
