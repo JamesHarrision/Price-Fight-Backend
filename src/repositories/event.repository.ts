@@ -66,4 +66,32 @@ export class EventRepository {
     })
   }
 
+  public getAllEvents = async (page: number = 1, limit: number = 10, status: string) => {
+    const skip = (page - 1) * limit;
+    const whereCondition: any = {}
+
+    if (status) whereCondition.status = status;
+
+    const [event, total] = await Promise.all([
+      await prisma.auctionEvent.findMany({
+        where: whereCondition,
+        skip: skip,
+        take: limit,
+        orderBy: { start_time: 'desc' }
+      }),
+      await prisma.auctionEvent.count({
+        where: whereCondition
+      }),
+    ]);
+
+    return {
+      data: event,
+      pagination: {
+        totalPages: Math.ceil(total / limit),
+        totalItems: total,
+        page: page,
+        limit: limit
+      }
+    }
+  }
 }

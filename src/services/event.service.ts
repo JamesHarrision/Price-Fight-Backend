@@ -109,4 +109,9 @@ export class EventService {
 
     return await this.eventRepo.addParticipant(eventId, userId);
   };
+
+  public getAllEvents = async (page: number = 1, limit: number = 10, status: string) => {
+    if(page <= 0 || limit <= 0) throw new Error("INVALID_QUERY");
+    return await this.eventRepo.getAllEvents(page, limit, status);
+  }
 }

@@ -1,7 +1,9 @@
 import { Request, Response } from "express";
 import { AuthRequest } from "../middlewares/auth.middleware";
 import { EventService } from "../services/event.service";
-import { Role } from "@prisma/client";
+import { EventStatus, Prisma, Role } from "@prisma/client";
+import { prisma } from "../config/prisma.config";
+import { stat } from "node:fs";
 
 export class EventController {
   private eventService = new EventService();
@@ -143,31 +145,55 @@ export class EventController {
   };
 
   public kickUser = async (req: AuthRequest, res: Response) => {
-  try {
-    const { eventId, userId } = req.params;
-    const currentUser = req.user;
-    // Nếu user tự thoát thì userId = req.user.id
-    // Nếu Admin đá user thì lấy userId từ params
+    try {
+      const { eventId, userId } = req.params;
+      const currentUser = req.user;
+      // Nếu user tự thoát thì userId = req.user.id
+      // Nếu Admin đá user thì lấy userId từ params
 
-    if (currentUser.role !== Role.ADMIN && currentUser.id !== userId) {
-      return res.status(403).json({ message: "Bạn không có quyền đuổi người dùng khỏi sự kiện" });
-    }
+      if (currentUser.role !== Role.ADMIN && currentUser.id !== userId) {
+        return res.status(403).json({ message: "Bạn không có quyền đuổi người dùng khỏi sự kiện" });
+      }
 
-    await this.eventService.removeUserFromEvent(eventId as string, userId as string);
+      await this.eventService.removeUserFromEvent(eventId as string, userId as string);
 
-    return res.status(200).json({ message: "Đã rời khỏi sự kiện thành công" });
-  } catch (error: any) {
-    if (error.message === 'CANNOT_REMOVE_WINNER') {
-      return res.status(400).json({ message: "Không thể xóa: Người dùng đang là người thắng cuộc của vật phẩm trong sự kiện này." });
-    }
-    if (error.message === 'CANNOT_REMOVE_BIDDER') {
-      return res.status(400).json({ message: "Không thể xóa: Người dùng đã tham gia đấu giá trong sự kiện này." });
-    }
-    if (error.message === 'PARTICIPANT_NOT_FOUND') {
-      return res.status(404).json({ message: "Người dùng chưa tham gia sự kiện này." });
-    }
+      return res.status(200).json({ message: "Đã rời khỏi sự kiện thành công" });
+    } catch (error: any) {
+      if (error.message === 'CANNOT_REMOVE_WINNER') {
+        return res.status(400).json({ message: "Không thể xóa: Người dùng đang là người thắng cuộc của vật phẩm trong sự kiện này." });
+      }
+      if (error.message === 'CANNOT_REMOVE_BIDDER') {
+        return res.status(400).json({ message: "Không thể xóa: Người dùng đã tham gia đấu giá trong sự kiện này." });
+      }
+      if (error.message === 'PARTICIPANT_NOT_FOUND') {
+        return res.status(404).json({ message: "Người dùng chưa tham gia sự kiện này." });
+      }
 
-    return res.status(500).json({ message: "Lỗi server" });
+      return res.status(500).json({ message: "Lỗi server" });
+    }
   }
-}
+
+  public getAllEvent = async (req: AuthRequest, res: Response) => {
+    try {
+      let { page, limit, status } = req.query;
+
+      if (status !== EventStatus.ENDED && status !== EventStatus.ONGOING && status !== EventStatus.PENDING) {
+        throw new Error("INVALID STATUS")
+      }
+
+      const events = await this.eventService.getAllEvents(
+        parseInt(page as string),
+        parseInt(limit as string),
+        status);
+
+      return res.status(200).json({
+        message: "Lấy danh sách sự kiện thành công",
+        data: events
+      })
+    } catch (error: any) {
+      console.log(error);
+      if (error.message) return res.status(401).json({ message: "INVALID QUERY" });
+      return res.status(500).json({ message: "Lỗi nội bộ của server" });
+    }
+  }
 }

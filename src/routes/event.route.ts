@@ -25,5 +25,7 @@ router.delete("/:eventId/participants/:userId", authenticate, eventController.ki
 
 router.post('/:eventId/join', authenticate, eventController.joinEvent);
 
+router.get("/", authenticate, eventController.getAllEvent);
+
 export default router;
 
