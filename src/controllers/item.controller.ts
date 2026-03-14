@@ -26,6 +26,21 @@ export class ItemController {
     }
   };
 
+  public getInventoryItems = async (req: Request, res: Response) => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 5;
+
+      const result = await this.itemService.getInventoryItems(page, limit);
+
+      return res.status(200).json(result);
+    } catch (error: any) {
+      return res.status(500).json({
+        message: 'Lỗi server!',
+      });
+    }
+  };
+
   public getItemDetail = async (req: Request, res: Response) => {
     try {
       const { itemId } = req.params;
@@ -51,7 +66,7 @@ export class ItemController {
       const { eventId } = req.params;
 
       const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-      
+
       const images = files?.['images']?.map((file) => file.path); // Lấy mảng URL ảnh phụ
       const primary_image = files?.['images']?.[0]?.path; // Lấy URL ảnh chính
 
@@ -67,10 +82,10 @@ export class ItemController {
         });
       }
 
-      const newItem = await this.itemService.createItem(eventId as string, itemData);
+      const newItem = await this.itemService.createItem(itemData, eventId as string);
 
       return res.status(201).json({
-        message: 'Thêm vật phẩm thành công',
+        message: eventId ? 'Thêm vật phẩm vào sự kiện thành công' : 'Thêm vật phẩm vào kho thành công',
         data: newItem,
       });
     } catch (error: any) {
