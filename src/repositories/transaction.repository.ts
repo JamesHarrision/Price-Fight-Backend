@@ -1,4 +1,4 @@
-import { prisma } from '../config/prisma.config';
+import { prisma } from './../config/prisma.config';
 import { ItemStatus, TransactionStatus } from '@prisma/client';
 
 export class TransactionRepository {
@@ -41,6 +41,29 @@ export class TransactionRepository {
       });
 
       return { updatedTransaction, updatedItem, currentBalance: updatedUser.balance };
+    });
+  };
+
+  public getExpiredPendingTransactions = async (expiryDate: Date) => {
+    return await prisma.transaction.findMany({
+      where: {
+        status: TransactionStatus.PENDING,
+        created_at: { lt: expiryDate },
+      },
+    });
+  };
+
+  public cancelTransaction = async (transactionId: string, itemId: string) => {
+    return await prisma.$transaction(async (tx) => {
+      await tx.transaction.update({
+        where: { id: transactionId },
+        data: { status: TransactionStatus.FAILED },
+      });
+
+      await tx.auctionItem.update({
+        where: { id: itemId },
+        data: { status: ItemStatus.UNSOLD },
+      });
     });
   };
 }

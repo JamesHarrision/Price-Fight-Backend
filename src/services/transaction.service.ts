@@ -44,4 +44,31 @@ export class TransactionService {
 
     return result;
   };
+
+  public handleExpiredTransactions = async () => {
+    console.log('🔄 [Transaction Job] Đang quét các hóa đơn quá hạn...');
+    const X_DAYS = 3; // Quy định 3 ngày
+    const expiryDate = new Date();
+    expiryDate.setDate(expiryDate.getDate() - X_DAYS);
+
+    const expiredTxns = await this.transactionRepo.getExpiredPendingTransactions(expiryDate);
+
+    if (expiredTxns.length === 0) {
+      console.log('✅ [Transaction Job] Không có hóa đơn nào quá hạn.');
+      return 0;
+    }
+
+    let cancelCount = 0;
+    for (const txn of expiredTxns) {
+      try {
+        await this.transactionRepo.cancelTransaction(txn.id, txn.item_id);
+        cancelCount++;
+        console.log(`❌ [Transaction Job] Đã hủy hóa đơn ${txn.id} (Quá hạn thanh toán)`);
+      } catch (error) {
+        console.error(`⚠️ [Transaction Job] Lỗi khi hủy hóa đơn ${txn.id}:`, error);
+      }
+    }
+
+    return cancelCount;
+  };
 }
