@@ -1,17 +1,29 @@
 import { EventRepository } from '../repositories/event.repository';
 import { ItemRepository } from '../repositories/item.repository';
+import { deleteImageFromCloudinary } from '../utils/cloudinary.util';
 
 export class ItemService {
   private itemRepo = new ItemRepository();
   private eventRepo = new EventRepository();
 
-  public getItemsByEvent = async (eventId: string) => {
+  public getItemsByEvent = async (eventId: string, page: number = 1, limit: number = 5) => {
     const event = await this.eventRepo.findById(eventId);
     if (!event) {
       throw new Error('EVENT_NOT_FOUND');
     }
 
-    return await this.itemRepo.getItemsByEventId(eventId);
+    const skip = (page - 1) * limit;
+
+    const { items, total } = await this.itemRepo.getItemsByEventId(eventId, skip, limit);
+    return {
+      data: items,
+      pagination: {
+        total_items: total,
+        total_pages: Math.ceil(total / limit),
+        current_page: page,
+        limit: limit,
+      },
+    };
   };
 
   public getItemDetail = async (itemId: string) => {
@@ -23,17 +35,18 @@ export class ItemService {
     return item;
   };
 
-  public createItem = async (eventId: string, data: any) => {
-    const event = await this.eventRepo.findById(eventId);
-    if (!event) {
-      throw new Error('EVENT_NOT_FOUND');
+  public createItem = async (data: any, eventId?: string) => {
+    if (eventId) {
+      const event = await this.eventRepo.findById(eventId);
+      if (!event) {
+        throw new Error('EVENT_NOT_FOUND');
+      }
+      if (event.status !== 'PENDING') {
+        throw new Error('EVENT_NOT_PENDING');
+      }
     }
-    if (event.status !== 'PENDING') {
-      throw new Error('EVENT_NOT_PENDING');
-    }
-
     const newItemData = {
-      event_id: eventId,
+      event_id: eventId || null,
       name: data.name,
       description: data.description || null,
       primary_image: data.primary_image || null,
@@ -60,8 +73,24 @@ export class ItemService {
     const updateData: any = {};
     if (data.name) updateData.name = data.name;
     if (data.description) updateData.description = data.description;
-    if (data.primary_image) updateData.primary_image = data.primary_image;
-    if (data.images) updateData.images = data.images;
+    if (data.event_id !== undefined) {
+      updateData.event_id = data.event_id ? data.event_id : null;
+    }
+    if (data.primary_image) {
+      updateData.primary_image = data.primary_image;
+      if (item.primary_image) {
+        await deleteImageFromCloudinary(item.primary_image);
+      }
+    }
+    if (data.images) {
+      updateData.images = data.images;
+      if (item.images && Array.isArray(item.images)) {
+        for (const oldImageUrl of item.images) {
+          await deleteImageFromCloudinary(oldImageUrl as string);
+        }
+      }
+    }
+
     if (data.start_price) updateData.start_price = Number(data.start_price);
     if (data.step_price) updateData.step_price = Number(data.step_price);
 
@@ -79,8 +108,32 @@ export class ItemService {
       throw new Error('ITEM_NOT_WAITING');
     }
 
+    if (item.primary_image) {
+      await deleteImageFromCloudinary(item.primary_image);
+    }
+
+    if (item.images && Array.isArray(item.images)) {
+      for (const imageUrl of item.images) {
+        await deleteImageFromCloudinary(imageUrl as string);
+      }
+    }
     await this.itemRepo.deleteItem(itemId);
 
     return true;
+  };
+
+  public getInventoryItems = async (page: number = 1, limit: number = 5) => {
+    const skip = (page - 1) * limit;
+    const { items, total } = await this.itemRepo.getInventoryItems(skip, limit);
+
+    return {
+      data: items,
+      pagination: {
+        total_items: total,
+        total_pages: Math.ceil(total / limit),
+        current_page: page,
+        limit: limit,
+      },
+    };
   };
 }

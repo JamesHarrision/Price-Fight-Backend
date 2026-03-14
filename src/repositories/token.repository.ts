@@ -22,4 +22,14 @@ export class TokenRepository {
       },
     });
   };
+
+  public deleteExpiredTokens = async () => {
+    return await prisma.token.deleteMany({
+      where: {
+        expires_at: {
+          lt: new Date(),
+        },
+      },
+    });
+  };
 }

@@ -1,11 +1,20 @@
 import { prisma } from '../config/prisma.config';
 
 export class ItemRepository {
-  public getItemsByEventId = async (eventId: string) => {
-    return await prisma.auctionItem.findMany({
-      where: { event_id: eventId },
-      orderBy: { name: 'asc' },
-    });
+  public getItemsByEventId = async (eventId: string, skip?: number, take?: number) => {
+    const [items, total] = await Promise.all([
+      prisma.auctionItem.findMany({
+        where: { event_id: eventId },
+        orderBy: { name: 'asc' }, // Sắp xếp theo tên A-Z
+        skip: skip,
+        take: take,
+      }),
+      prisma.auctionItem.count({
+        where: { event_id: eventId },
+      }),
+    ]);
+
+    return { items, total };
   };
 
   public getItemById = async (itemId: string) => {
@@ -31,5 +40,31 @@ export class ItemRepository {
     return await prisma.auctionItem.delete({
       where: { id: itemId },
     });
+  };
+
+  public getItemByWinnerId = async (eventId: string, userId: string) => {
+    return await prisma.auctionItem.findFirst({
+      where: {
+        event_id: eventId,
+        winner_id: userId,
+      },
+    });
+  };
+
+  public getInventoryItems = async (skip?: number, take?: number) => {
+    const [items, total] = await Promise.all([
+      prisma.auctionItem.findMany({
+        where: { event_id: null },
+        orderBy: { name: 'asc' },
+        skip: skip,
+        take: take,
+      }),
+
+      prisma.auctionItem.count({
+        where: { event_id: null },
+      }),
+    ]);
+
+    return { items, total };
   };
 }
