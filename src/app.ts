@@ -7,6 +7,7 @@ import itemRoutes from './routes/item.route';
 import eventRoutes from './routes/event.route';
 import userRoutes from './routes/user.route';
 import adminRoutes from './routes/admin.route';
+import bidRoutes from './routes/bid.route';
 
 const app = express();
 
@@ -21,6 +22,7 @@ app.use('/api', itemRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api', bidRoutes);
 
 // Test Route
 app.get('/', async (req, res) => {
