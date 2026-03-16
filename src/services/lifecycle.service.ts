@@ -13,12 +13,10 @@ export class LifeCycleService {
 
   public startPendingEvent = async () => {
     try {
-      console.log('🔄 [Lifecycle] Đang kiểm tra các sự kiện cần mở...');
 
       const pendingEvents = await this.eventRepo.getPendingEvents();
 
       if (pendingEvents.length === 0) {
-        console.log("Không tìm thấy sự kiện thỏa mãn");
         return;
       }
 
