@@ -109,4 +109,18 @@ export class EventRepository {
       }
     });
   }
+
+  public getEndedOngoingEvents = async () => {
+    return await prisma.auctionEvent.findMany({
+      where: {
+        status: EventStatus.ONGOING,
+        end_time: {
+          lte: getDate()
+        }
+      },
+      include: {
+        items: true
+      }
+    });
+  }
 }

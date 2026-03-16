@@ -3,7 +3,7 @@ import { EventRepository } from '../repositories/event.repository';
 import { ItemRepository } from '../repositories/item.repository';
 import { deleteImageFromCloudinary } from '../utils/cloudinary.util';
 import { UserRepository } from '../repositories/user.repository';
-import { getDate } from '../utils/day.util';
+import { getDate, parseDate } from '../utils/day.util';
 
 export class EventService {
   private eventRepo = new EventRepository();
@@ -12,8 +12,8 @@ export class EventService {
   private userRepo = new UserRepository();
 
   public createEvent = async (data: any) => {
-    if (new Date(data.start_time) < getDate()) throw new Error('INVALID_START_TIME_PAST');
-    if (new Date(data.start_time) > new Date(data.end_time)) throw new Error('INVALID_TIME_RANGE');
+    if (parseDate(data.start_time) < getDate()) throw new Error('INVALID_START_TIME_PAST');
+    if (parseDate(data.start_time) > parseDate(data.end_time)) throw new Error('INVALID_TIME_RANGE');
 
     return await this.eventRepo.create(data);
   };
@@ -27,8 +27,8 @@ export class EventService {
       const start = data.start_time || existingEvent.start_time;
       const end = data.end_time || existingEvent.end_time;
 
-      if (new Date(start) < getDate()) throw new Error('INVALID_START_TIME_PAST');
-      if (new Date(start) > new Date(end)) throw new Error('INVALID_TIME_RANGE');
+      if (parseDate(start) < getDate()) throw new Error('INVALID_START_TIME_PAST');
+      if (parseDate(start) > parseDate(end)) throw new Error('INVALID_TIME_RANGE');
     }
 
     if (existingEvent.cover_image && data.cover_image) {
