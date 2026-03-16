@@ -4,6 +4,7 @@ import { ItemRepository } from '../repositories/item.repository';
 import { deleteImageFromCloudinary } from '../utils/cloudinary.util';
 import { UserRepository } from '../repositories/user.repository';
 import { getDate, parseDate } from '../utils/day.util';
+import { AppError } from '../utils/appError';
 
 export class EventService {
   private eventRepo = new EventRepository();
@@ -12,8 +13,10 @@ export class EventService {
   private userRepo = new UserRepository();
 
   public createEvent = async (data: any) => {
-    if (parseDate(data.start_time) < getDate()) throw new Error('INVALID_START_TIME_PAST');
-    if (parseDate(data.start_time) > parseDate(data.end_time)) throw new Error('INVALID_TIME_RANGE');
+    if (parseDate(data.start_time) < getDate())
+      throw new AppError(400, 'Thời gian bắt đầu phải lớn hơn thời gian hiện tại');
+    if (parseDate(data.start_time) > parseDate(data.end_time))
+      throw new AppError(400, 'Thời gian kết thúc phải lớn hơn thời gian bắt đầu');
 
     return await this.eventRepo.create(data);
   };
@@ -27,8 +30,9 @@ export class EventService {
       const start = data.start_time || existingEvent.start_time;
       const end = data.end_time || existingEvent.end_time;
 
-      if (parseDate(start) < getDate()) throw new Error('INVALID_START_TIME_PAST');
-      if (parseDate(start) > parseDate(end)) throw new Error('INVALID_TIME_RANGE');
+      if (parseDate(start) < getDate()) throw new AppError(400, 'Thời gian bắt đầu phải lớn hơn thời gian hiện tại');
+      if (parseDate(start) > parseDate(end))
+        throw new AppError(400, 'Thời gian kết thúc phải lớn hơn thời gian bắt đầu');
     }
 
     if (existingEvent.cover_image && data.cover_image) {
@@ -40,7 +44,7 @@ export class EventService {
 
   public deleteEvent = async (id: string) => {
     const existingEvent = await this.eventRepo.findById(id);
-    if (!existingEvent) throw new Error('EVENT_NOT_FOUND');
+    if (!existingEvent) throw new AppError(404, 'Không tìm thấy sự kiện');
 
     const items = (await this.itemRepo.getItemsByEventId(id)).items;
     await Promise.all(
@@ -62,41 +66,43 @@ export class EventService {
 
   public getEvent = async (id: string) => {
     const existingEvent = await this.eventRepo.findById(id);
-    if (!existingEvent) throw new Error('EVENT_NOT_FOUND');
+    if (!existingEvent) throw new AppError(404, 'Không tìm thấy sự kiện');
 
     return await this.eventRepo.findById(id);
   };
 
   public removeUserFromEvent = async (eventId: string, userId: string) => {
     const isWinner = await this.itemRepo.getItemByWinnerId(eventId, userId);
-    if (isWinner) throw new Error('CANNOT_REMOVE_WINNER');
+    if (isWinner)
+      throw new AppError(400, 'Không thể xóa: Người dùng đang là người thắng cuộc của vật phẩm trong sự kiện này.');
 
     const hasBids = await this.bidRepo.getBidByUserAndEvent(userId, eventId);
-    if (hasBids) throw new Error('CANNOT_REMOVE_BIDDER');
+    if (hasBids) throw new AppError(400, 'Không thể xóa: Người dùng đã tham gia đấu giá trong sự kiện này.');
 
     const participant = await this.eventRepo.getEventUserById(eventId, userId);
-    if (!participant) throw new Error('PARTICIPANT_NOT_FOUND');
+    if (!participant) throw new AppError(404, 'Người dùng chưa tham gia sự kiện này.');
 
     await this.eventRepo.kickUserOutEvent(eventId, userId);
     return true;
-  }
+  };
+
   public joinEvent = async (eventId: string, userId: string) => {
     const event = await this.eventRepo.findById(eventId);
     if (!event) {
-      throw new Error('EVENT_NOT_FOUND');
+      throw new AppError(404, 'Không tìm thấy sự kiện');
     }
     if (event.status === 'ENDED') {
-      throw new Error('EVENT_ENDED');
+      throw new AppError(400, 'Sự kiện đã kết thúc, không thể tham gia');
     }
 
     const isJoined = await this.eventRepo.checkParticipant(eventId, userId);
     if (isJoined) {
-      throw new Error('ALREADY_JOINED');
+      throw new AppError(400, 'Bạn đã tham gia sự kiện này rồi');
     }
 
     const user = await this.userRepo.getUserById(userId);
     if (!user) {
-      throw new Error('USER_NOT_FOUND');
+      throw new AppError(404, 'Không tìm thấy người dùng');
     }
 
     const { items } = await this.itemRepo.getItemsByEventId(eventId);
@@ -104,7 +110,10 @@ export class EventService {
       const minPrice = Math.min(...items.map((item) => Number(item.start_price)));
 
       if (Number(user.balance) < minPrice) {
-        throw new Error(`INSUFFICIENT_BALANCE:${minPrice}`);
+        throw new AppError(
+          400,
+          `Số dư của bạn không đủ! Cần ít nhất ${Number(minPrice).toLocaleString('vi-VN')}đ (giá của vật phẩm rẻ nhất) để tham gia phòng này.`,
+        );
       }
     }
 
@@ -112,7 +121,7 @@ export class EventService {
   };
 
   public getAllEvents = async (page: number = 1, limit: number = 10, status: string) => {
-    if(page <= 0 || limit <= 0) throw new Error("INVALID_QUERY");
+    if (page <= 0 || limit <= 0) throw new AppError(400, 'Tham số phân trang không hợp lệ');
     return await this.eventRepo.getAllEvents(page, limit, status);
-  }
+  };
 }

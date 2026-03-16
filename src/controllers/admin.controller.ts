@@ -6,19 +6,11 @@ export class AdminController {
 
   // API Kích hoạt thủ công Job dọn dẹp Token
   public manualTriggerCleanupTokens = async (req: Request, res: Response) => {
-    try {
-      const deletedCount = await this.jobService.cleanupExpiredTokens();
+    const deletedCount = await this.jobService.cleanupExpiredTokens();
 
-      return res.status(200).json({
-        message: 'Kích hoạt dọn dẹp token thành công',
-        deleted_count: deletedCount,
-      });
-    } catch (error: any) {
-      console.error(error);
-      return res.status(500).json({
-        message: 'Lỗi server khi dọn dẹp token',
-        error: error.message,
-      });
-    }
+    res.status(200).json({
+      message: 'Kích hoạt dọn dẹp token thành công',
+      deleted_count: deletedCount,
+    });
   };
 }
