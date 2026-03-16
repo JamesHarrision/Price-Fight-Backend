@@ -4,6 +4,7 @@ import { EventRepository } from '../repositories/event.repository';
 import { UserRepository } from '../repositories/user.repository';
 import { FirebaseUtils } from '../utils/firebase.util';
 import { firebaseDB } from '../config/firebase.config';
+import { getDate } from '../utils/day.util';
 
 export class BidService {
   private bidRepo = new BidRepository();
@@ -76,7 +77,7 @@ export class BidService {
         user_id: user.id,
         full_name: user.full_name,
         amount: amount,
-        time: new Date().toISOString(),
+        time: getDate(),
       };
 
       // Cập nhật giá cao nhất và người giữ giá
