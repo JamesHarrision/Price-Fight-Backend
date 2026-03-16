@@ -1,9 +1,10 @@
 import cron from 'node-cron';
 import { JobService } from '../services/job.service';
 import { LifeCycleService } from '../services/lifecycle.service';
+import { TransactionService } from '../services/transaction.service';
 
 const jobService = new JobService();
-
+const transactionService = new TransactionService();
 const lifecycleService = new LifeCycleService();
 
 export const startCronJobs = () => {
@@ -33,6 +34,18 @@ export const startCronJobs = () => {
     }
   });
 
+  let isCheckingTransactions = false;
+  cron.schedule('* * * * *', async () => {
+    if (isCheckingTransactions) return;
+    isCheckingTransactions = true;
+    try {
+      await transactionService.handleExpiredTransactions();
+    } catch (error) {
+      console.error('❌ [Cron] Lỗi khi quét hóa đơn quá hạn:', error);
+    } finally {
+      isCheckingTransactions = false;
+    }
+  });
+
   console.log('🤖 [Cron] Hệ thống tác vụ chạy ngầm đã được khởi động!');
 };
-
