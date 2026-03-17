@@ -175,16 +175,21 @@ export class EventController {
 
   public getAllEvent = async (req: AuthRequest, res: Response) => {
     try {
-      let { page, limit, status } = req.query;
+      let { page, limit, status } = req.query as { page?: string, limit?: string, status?: string };
 
-      if (status !== EventStatus.ENDED && status !== EventStatus.ONGOING && status !== EventStatus.PENDING) {
-        throw new Error("INVALID STATUS")
+      const pageNum = parseInt(page || '1');
+      const limitNum = parseInt(limit || '10');
+
+      // If status is provided, validate it. If not, pass as undefined to let repository handle it (show all)
+      if (status && status !== EventStatus.ENDED && status !== EventStatus.ONGOING && status !== EventStatus.PENDING) {
+        return res.status(400).json({ message: "Trạng thái sự kiện không hợp lệ" });
       }
 
       const events = await this.eventService.getAllEvents(
-        parseInt(page as string),
-        parseInt(limit as string),
-        status);
+        pageNum,
+        limitNum,
+        status as EventStatus
+      );
 
       return res.status(200).json({
         message: "Lấy danh sách sự kiện thành công",
@@ -192,7 +197,9 @@ export class EventController {
       })
     } catch (error: any) {
       console.log(error);
-      if (error.message) return res.status(401).json({ message: "INVALID QUERY" });
+      if (error.message === 'INVALID_QUERY') {
+        return res.status(400).json({ message: "Tham số truy vấn không hợp lệ" });
+      }
       return res.status(500).json({ message: "Lỗi nội bộ của server" });
     }
   }
