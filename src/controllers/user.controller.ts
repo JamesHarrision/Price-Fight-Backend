@@ -44,6 +44,20 @@ export class UserController {
     }
   };
 
+  public getAllUsers = async (req: AuthRequest, res: Response) => {
+    try {
+      const { page, limit, search } = req.query;
+      const result = await this.userService.getAllUsers(
+        Number(page || 1),
+        Number(limit || 10),
+        search as string
+      );
+      return res.status(200).json(result);
+    } catch (error: any) {
+      return res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+  };
+
   public deposit = async (req: AuthRequest, res: Response) => {
     try {
       const userId = req.user.id;

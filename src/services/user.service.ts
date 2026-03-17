@@ -37,4 +37,18 @@ export class UserService {
     const { password, ...userWithoutPassword } = updatedUser;
     return userWithoutPassword;
   }
+
+  public getAllUsers = async (page: number = 1, limit: number = 10, search?: string) => {
+    const skip = (page - 1) * limit;
+    const { users, total } = await this.userRepo.getAllUsers(skip, limit, search);
+    return {
+      data: users.map(({ password, ...rest }) => rest),
+      pagination: {
+        total_items: total,
+        total_pages: Math.ceil(total / limit),
+        current_page: page,
+        limit: limit,
+      },
+    };
+  };
 }

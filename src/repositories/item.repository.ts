@@ -51,17 +51,34 @@ export class ItemRepository {
     });
   };
 
-  public getInventoryItems = async (skip?: number, take?: number) => {
+  public getInventoryItems = async (skip?: number, take?: number, search?: string, status?: string, unassignedOnly?: boolean) => {
+    const where: any = {};
+
+    if (unassignedOnly) {
+      where.event_id = null;
+    }
+
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } }
+      ];
+    }
+
+    if (status) {
+      where.status = status;
+    }
+
     const [items, total] = await Promise.all([
       prisma.auctionItem.findMany({
-        where: { event_id: null },
+        where: where,
         orderBy: { name: 'asc' },
         skip: skip,
         take: take,
       }),
 
       prisma.auctionItem.count({
-        where: { event_id: null },
+        where: where,
       }),
     ]);
 

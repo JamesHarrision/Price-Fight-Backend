@@ -66,8 +66,8 @@ export class ItemService {
       throw new Error('ITEM_NOT_FOUND');
     }
 
-    if (item.status !== 'WAITING') {
-      throw new Error('ITEM_NOT_WAITING');
+    if (item.status !== 'WAITING' && item.status !== 'UNSOLD') {
+      throw new Error('ITEM_NOT_WAITING_OR_UNSOLD');
     }
 
     const updateData: any = {};
@@ -122,12 +122,13 @@ export class ItemService {
     return true;
   };
 
-  public getInventoryItems = async (page: number = 1, limit: number = 5) => {
+  public getInventoryItems = async (page: number = 1, limit: number = 5, search?: string, status?: string, unassignedOnly?: boolean) => {
     const skip = (page - 1) * limit;
-    const { items, total } = await this.itemRepo.getInventoryItems(skip, limit);
+    const { items, total } = await this.itemRepo.getInventoryItems(skip, limit, search, status, unassignedOnly);
 
     return {
-      data: items,
+      items,
+      total,
       pagination: {
         total_items: total,
         total_pages: Math.ceil(total / limit),

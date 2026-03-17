@@ -9,10 +9,14 @@ export class ItemController {
       const { eventId } = req.params;
 
       const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 5;
-      const items = await this.itemService.getItemsByEvent(eventId as string, page, limit);
+      const limit = parseInt(req.query.limit as string) || 100; // default high limit for admin detail view
+      const result = await this.itemService.getItemsByEvent(eventId as string, page, limit);
 
-      return res.status(200).json({ items });
+      // result = { data: items[], pagination: {...} }
+      return res.status(200).json({
+        items: result.data,
+        pagination: result.pagination
+      });
     } catch (error: any) {
       if (error.message === 'EVENT_NOT_FOUND') {
         return res.status(404).json({
@@ -29,9 +33,12 @@ export class ItemController {
   public getInventoryItems = async (req: Request, res: Response) => {
     try {
       const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 5;
+      const limit = parseInt(req.query.limit as string) || 10;
+      const search = req.query.search as string;
+      const status = req.query.status as string;
+      const unassignedOnly = req.query.unassignedOnly === 'true';
 
-      const result = await this.itemService.getInventoryItems(page, limit);
+      const result = await this.itemService.getInventoryItems(page, limit, search, status, unassignedOnly);
 
       return res.status(200).json(result);
     } catch (error: any) {
@@ -65,10 +72,23 @@ export class ItemController {
     try {
       const { eventId } = req.params;
 
-      const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+      const files = req.files as { [fieldname: string]: Express.Multer.File[] } | Express.Multer.File[];
+      let images: string[] = [];
+      let primary_image: string | null = null;
 
-      const images = files?.['images']?.map((file) => file.path); // Lấy mảng URL ảnh phụ
-      const primary_image = files?.['images']?.[0]?.path; // Lấy URL ảnh chính
+      if (Array.isArray(files)) {
+        images = files.map(file => file.path);
+      } else if (files && typeof files === 'object') {
+        images = files['images']?.map(file => file.path) || [];
+        primary_image = files['primary_image']?.[0]?.path || null;
+      }
+
+      // If no explicit primary_image, take first from images
+      if (!primary_image && images.length > 0) {
+        primary_image = images[0];
+      }
+
+
 
       const itemData = {
         ...req.body,
@@ -134,9 +154,9 @@ export class ItemController {
           message: 'Vật phẩm không tồn tại',
         });
       }
-      if (error.message === 'ITEM_NOT_WAITING') {
+      if (error.message === 'ITEM_NOT_WAITING_OR_UNSOLD') {
         return res.status(400).json({
-          message: 'Không thể sửa vật phẩm đang hoặc đã đấu giá',
+          message: 'Chỉ có thể sửa vật phẩm đang chờ hoặc chưa bán được',
         });
       }
       return res.status(500).json({

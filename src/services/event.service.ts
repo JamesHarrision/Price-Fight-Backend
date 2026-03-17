@@ -12,30 +12,49 @@ export class EventService {
   private userRepo = new UserRepository();
 
   public createEvent = async (data: any) => {
-    if (parseDate(data.start_time) < getDate()) throw new Error('INVALID_START_TIME_PAST');
-    if (parseDate(data.start_time) > parseDate(data.end_time)) throw new Error('INVALID_TIME_RANGE');
+    const start = parseDate(data.start_time);
+    const end = parseDate(data.end_time);
 
-    return await this.eventRepo.create(data);
+    if (start < getDate()) throw new Error('INVALID_START_TIME_PAST');
+    if (start > end) throw new Error('INVALID_TIME_RANGE');
+
+    const formattedData = {
+      ...data,
+      start_time: start,
+      end_time: end,
+      cover_image: data.cover_image || null
+    };
+
+    return await this.eventRepo.create(formattedData);
   };
 
   public updateEvent = async (id: string, data: any) => {
     const existingEvent = await this.eventRepo.findById(id);
     if (!existingEvent) throw new Error('EVENT_NOT_FOUND');
 
+    const updateData = { ...data };
+
     // Nếu có cập nhật thời gian thì mới validate lại
     if (data.start_time || data.end_time) {
-      const start = data.start_time || existingEvent.start_time;
-      const end = data.end_time || existingEvent.end_time;
+      const start = parseDate(data.start_time || existingEvent.start_time);
+      const end = parseDate(data.end_time || existingEvent.end_time);
 
-      if (parseDate(start) < getDate()) throw new Error('INVALID_START_TIME_PAST');
-      if (parseDate(start) > parseDate(end)) throw new Error('INVALID_TIME_RANGE');
+      if (start < getDate()) throw new Error('INVALID_START_TIME_PAST');
+      if (start > end) throw new Error('INVALID_TIME_RANGE');
+
+      if (data.start_time) updateData.start_time = start;
+      if (data.end_time) updateData.end_time = end;
+    }
+
+    if (data.cover_image === '') {
+      updateData.cover_image = null;
     }
 
     if (existingEvent.cover_image && data.cover_image) {
       await deleteImageFromCloudinary(existingEvent.cover_image);
     }
 
-    return await this.eventRepo.update(id, data);
+    return await this.eventRepo.update(id, updateData);
   };
 
   public deleteEvent = async (id: string) => {
@@ -80,6 +99,20 @@ export class EventService {
     await this.eventRepo.kickUserOutEvent(eventId, userId);
     return true;
   }
+
+  public addParticipantByAdmin = async (eventId: string, userId: string) => {
+    const event = await this.eventRepo.findById(eventId);
+    if (!event) throw new Error('EVENT_NOT_FOUND');
+
+    const isJoined = await this.eventRepo.checkParticipant(eventId, userId);
+    if (isJoined) throw new Error('ALREADY_JOINED');
+
+    const user = await this.userRepo.getUserById(userId);
+    if (!user) throw new Error('USER_NOT_FOUND');
+
+    return await this.eventRepo.addParticipant(eventId, userId);
+  };
+
   public joinEvent = async (eventId: string, userId: string) => {
     const event = await this.eventRepo.findById(eventId);
     if (!event) {
@@ -112,7 +145,11 @@ export class EventService {
   };
 
   public getAllEvents = async (page: number = 1, limit: number = 10, status: string) => {
-    if(page <= 0 || limit <= 0) throw new Error("INVALID_QUERY");
+    if (page <= 0 || limit <= 0) throw new Error("INVALID_QUERY");
     return await this.eventRepo.getAllEvents(page, limit, status);
   }
+
+  public getParticipants = async (eventId: string) => {
+    return await this.eventRepo.getParticipantsByEventId(eventId);
+  };
 }

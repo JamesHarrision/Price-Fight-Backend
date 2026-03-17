@@ -31,9 +31,9 @@ export class EventController {
       });
     } catch (error: any) {
       if (error.message === 'INVALID_START_TIME_PAST') {
-        return res.status(401).json({ message: 'Thời gian bắt đầu phải lớn hơn thời gian hiện tại' });
+        return res.status(400).json({ message: 'Thời gian bắt đầu phải lớn hơn thời gian hiện tại' });
       } else if (error.message === 'INVALID_TIME_RANGE') {
-        return res.status(401).json({ message: 'Thời gian kết thúc phải lớn hơn thời gian bắt đầu' });
+        return res.status(400).json({ message: 'Thời gian kết thúc phải lớn hơn thời gian bắt đầu' });
       }
       console.log(error);
       return res.status(500).json({ message: 'Lỗi nội bộ của server' });
@@ -61,9 +61,9 @@ export class EventController {
       });
     } catch (error: any) {
       if (error.message === 'INVALID_START_TIME_PAST') {
-        return res.status(401).json({ message: 'Thời gian bắt đầu phải lớn hơn thời gian hiện tại' });
+        return res.status(400).json({ message: 'Thời gian bắt đầu phải lớn hơn thời gian hiện tại' });
       } else if (error.message === 'INVALID_TIME_RANGE') {
-        return res.status(401).json({ message: 'Thời gian kết thúc phải lớn hơn thời gian bắt đầu' });
+        return res.status(400).json({ message: 'Thời gian kết thúc phải lớn hơn thời gian bắt đầu' });
       }
       console.log(error);
       return res.status(500).json({ message: 'Lỗi nội bộ của server' });
@@ -148,8 +148,6 @@ export class EventController {
     try {
       const { eventId, userId } = req.params;
       const currentUser = req.user;
-      // Nếu user tự thoát thì userId = req.user.id
-      // Nếu Admin đá user thì lấy userId từ params
 
       if (currentUser.role !== Role.ADMIN && currentUser.id !== userId) {
         return res.status(403).json({ message: "Bạn không có quyền đuổi người dùng khỏi sự kiện" });
@@ -171,7 +169,45 @@ export class EventController {
 
       return res.status(500).json({ message: "Lỗi server" });
     }
-  }
+  };
+
+  public addParticipantByAdmin = async (req: AuthRequest, res: Response) => {
+    try {
+      const { eventId } = req.params;
+      const { userId } = req.body;
+
+      if (!userId) {
+        return res.status(400).json({ message: "UserId là bắt buộc" });
+      }
+
+      await this.eventService.addParticipantByAdmin(eventId as string, userId as string);
+
+      return res.status(201).json({
+        message: 'Thêm người dùng vào sự kiện thành công!',
+      });
+    } catch (error: any) {
+      if (error.message === 'EVENT_NOT_FOUND') {
+        return res.status(404).json({ message: 'Sự kiện không tồn tại' });
+      }
+      if (error.message === 'ALREADY_JOINED') {
+        return res.status(400).json({ message: 'Người dùng đã tham gia sự kiện này rồi' });
+      }
+      if (error.message === 'USER_NOT_FOUND') {
+        return res.status(404).json({ message: 'Người dùng không tồn tại' });
+      }
+      return res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+  };
+
+  public getParticipants = async (req: AuthRequest, res: Response) => {
+    try {
+      const { eventId } = req.params;
+      const participants = await this.eventService.getParticipants(eventId as string);
+      return res.status(200).json({ data: participants });
+    } catch (error: any) {
+      return res.status(500).json({ message: 'Lỗi server', error: error.message });
+    }
+  };
 
   public getAllEvent = async (req: AuthRequest, res: Response) => {
     try {
