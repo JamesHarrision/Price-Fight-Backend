@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { JobService } from '../services/job.service';
 import { AdminService } from '../services/admin.service';
+import { prisma } from '../config/prisma.config';
 
 export class AdminController {
   private jobService = new JobService();
@@ -58,6 +59,25 @@ export class AdminController {
         message: 'Lỗi server khi dọn dẹp token',
         error: error.message,
       });
+    }
+  };
+
+  // Get all transactions (admin view)
+  public getAllTransactions = async (req: Request, res: Response) => {
+    try {
+      const transactions = await prisma.transaction.findMany({
+        include: {
+          user: { select: { id: true, full_name: true, email: true } },
+          item: {
+            include: { event: { select: { id: true, title: true } } }
+          }
+        },
+        orderBy: { created_at: 'desc' }
+      });
+      return res.status(200).json({ message: 'OK', data: transactions });
+    } catch (error: any) {
+      console.error(error);
+      return res.status(500).json({ message: 'Lỗi server', error: error.message });
     }
   };
 }
