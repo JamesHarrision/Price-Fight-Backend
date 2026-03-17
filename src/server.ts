@@ -1,8 +1,8 @@
-import app from './app';
 import dotenv from 'dotenv';
-import { startCronJobs } from './jobs/cron';
-
 dotenv.config();
+
+import app from './app';
+import { startCronJobs } from './jobs/cron';
 
 const PORT = process.env.PORT || 3000;
 
