@@ -46,5 +46,27 @@ export class UserRepository {
       where: { id: userId },
       data: data
     })
-  }
+  };
+
+  public getAllUsers = async (skip: number = 0, take: number = 10, search?: string) => {
+    const whereCondition: any = {};
+    if (search) {
+      whereCondition.OR = [
+        { full_name: { contains: search } },
+        { email: { contains: search } }
+      ];
+    }
+
+    const [users, total] = await Promise.all([
+      prisma.user.findMany({
+        where: whereCondition,
+        skip,
+        take,
+        orderBy: { full_name: 'asc' }
+      }),
+      prisma.user.count({ where: whereCondition })
+    ]);
+
+    return { users, total };
+  };
 }

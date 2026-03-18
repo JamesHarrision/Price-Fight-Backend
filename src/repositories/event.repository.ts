@@ -25,6 +25,12 @@ export class EventRepository {
   public findById = async (id: string) => {
     return await prisma.auctionEvent.findUnique({
       where: { id },
+      include: {
+        items: true,
+        _count: {
+          select: { participants: true }
+        }
+      }
     });
   };
 
@@ -120,6 +126,22 @@ export class EventRepository {
       },
       include: {
         items: true
+      }
+    });
+  }
+
+  public getParticipantsByEventId = async (eventId: string) => {
+    return await prisma.eventParticipant.findMany({
+      where: { event_id: eventId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            full_name: true,
+            email: true,
+            avatar_url: true
+          }
+        }
       }
     });
   }

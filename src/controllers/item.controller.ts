@@ -15,12 +15,15 @@ export class ItemController {
     return res.status(200).json({ items });
   };
 
+
   public getInventoryItems = async (req: Request, res: Response) => {
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 5;
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+      const search = req.query.search as string;
+      const status = req.query.status as string;
+      const unassignedOnly = req.query.unassignedOnly === 'true';
 
-    const result = await this.itemService.getInventoryItems(page, limit);
-
+      const result = await this.itemService.getInventoryItems(page, limit, search, status, unassignedOnly);
     return res.status(200).json(result);
   };
 

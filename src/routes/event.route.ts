@@ -23,6 +23,10 @@ router.get('/:eventId', eventController.findEvent);
 
 router.delete("/:eventId/participants/:userId", authenticate, eventController.kickUser)
 
+router.get('/:eventId/participants', authenticate, eventController.getParticipants);
+
+router.post('/:eventId/participants', authenticate, authorizedAdmin, eventController.addParticipantByAdmin);
+
 router.post('/:eventId/join', authenticate, eventController.joinEvent);
 
 router.get("/", authenticate, eventController.getAllEvent);

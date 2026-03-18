@@ -13,33 +13,51 @@ export class EventService {
   private userRepo = new UserRepository();
 
   public createEvent = async (data: any) => {
-    if (parseDate(data.start_time) < getDate())
-      throw new AppError(400, 'Thời gian bắt đầu phải lớn hơn thời gian hiện tại');
-    if (parseDate(data.start_time) > parseDate(data.end_time))
-      throw new AppError(400, 'Thời gian kết thúc phải lớn hơn thời gian bắt đầu');
 
-    return await this.eventRepo.create(data);
+    const start = parseDate(data.start_time);
+    const end = parseDate(data.end_time);
+
+    if (start < getDate()) throw new AppError(400, 'Thời gian bắt đầu phải lớn hơn thời gian hiện tại');
+    if (start > end) throw new AppError(400, 'Thời gian kết thúc phải lớn hơn thời gian bắt đầu');
+
+    const formattedData = {
+      ...data,
+      start_time: start,
+      end_time: end,
+      cover_image: data.cover_image || null
+    };
+
+    return await this.eventRepo.create(formattedData);
   };
 
   public updateEvent = async (id: string, data: any) => {
     const existingEvent = await this.eventRepo.findById(id);
     if (!existingEvent) throw new Error('EVENT_NOT_FOUND');
 
+    const updateData = { ...data };
+
     // Nếu có cập nhật thời gian thì mới validate lại
     if (data.start_time || data.end_time) {
-      const start = data.start_time || existingEvent.start_time;
-      const end = data.end_time || existingEvent.end_time;
+      const start = parseDate(data.start_time || existingEvent.start_time);
+      const end = parseDate(data.end_time || existingEvent.end_time);
 
-      if (parseDate(start) < getDate()) throw new AppError(400, 'Thời gian bắt đầu phải lớn hơn thời gian hiện tại');
-      if (parseDate(start) > parseDate(end))
-        throw new AppError(400, 'Thời gian kết thúc phải lớn hơn thời gian bắt đầu');
+
+      if (start < getDate()) throw new AppError(400, 'Thời gian bắt đầu phải lớn hơn thời gian hiện tại');
+      if (start > end) throw new AppError(400, 'Thời gian kết thúc phải lớn hơn thời gian bắt đầu');
+
+      if (data.start_time) updateData.start_time = start;
+      if (data.end_time) updateData.end_time = end;
+    }
+
+    if (data.cover_image === '') {
+      updateData.cover_image = null;
     }
 
     if (existingEvent.cover_image && data.cover_image) {
       await deleteImageFromCloudinary(existingEvent.cover_image);
     }
 
-    return await this.eventRepo.update(id, data);
+    return await this.eventRepo.update(id, updateData);
   };
 
   public deleteEvent = async (id: string) => {
@@ -84,6 +102,20 @@ export class EventService {
 
     await this.eventRepo.kickUserOutEvent(eventId, userId);
     return true;
+  }
+
+  public addParticipantByAdmin = async (eventId: string, userId: string) => {
+    const event = await this.eventRepo.findById(eventId);
+    if (!event) throw new AppError(404, 'Không tìm thấy sự kiện');
+
+    const isJoined = await this.eventRepo.checkParticipant(eventId, userId);
+    if (isJoined) throw new AppError(400, 'Không thể xóa: Người dùng đã tham gia đấu giá trong sự kiện này.');
+
+    const user = await this.userRepo.getUserById(userId);
+    if (!user) throw new AppError(404, 'Không tìm thấy người dùng');
+
+    return await this.eventRepo.addParticipant(eventId, userId);
+
   };
 
   public joinEvent = async (eventId: string, userId: string) => {

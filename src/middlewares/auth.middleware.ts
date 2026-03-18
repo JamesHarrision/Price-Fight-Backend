@@ -9,7 +9,9 @@ export interface AuthRequest extends Request {
 
 export const authenticate = async (req: AuthRequest, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
+
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    console.log('[Auth] Missing or malformed authorization header:', authHeader);
     return res.status(401).json({ message: 'Không tìm thấy Access Token. Vui lòng đăng nhập.' });
   }
 
@@ -19,7 +21,8 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
     const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET as string);
     req.user = decoded;
     next();
-  } catch (error) {
+  } catch (error: any) {
+    console.log('[Auth] Token verification failed:', error.message);
     return res.status(401).json({ message: 'Access Token đã hết hạn hoặc không hợp lệ.' });
   }
 };
@@ -28,9 +31,9 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
 export const authorizedAdmin = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     if (!req.user) {
-        return res.status(401).json({
-          message: 'Vui lòng đăng nhập!',
-        });
+      return res.status(401).json({
+        message: 'Vui lòng đăng nhập!',
+      });
     }
 
     if (req.user.role !== Role.ADMIN) {
