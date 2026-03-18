@@ -4,12 +4,13 @@ import { TokenRepository } from '../repositories/token.repository';
 import { passwordUtil } from '../utils/password.util';
 import { tokenUtil } from '../utils/token.util';
 
-
 import { sendVerificationEmail, sendPasswordResetOTPEmail } from '../utils/mailer.util';
-import { Role, TokenType } from "@prisma/client";
+import { Role, TokenType } from '@prisma/client';
 
-import jwt from 'jsonwebtoken'
+import jwt from 'jsonwebtoken';
 import { getDate } from '../utils/day.util';
+
+import { AppError } from '../utils/appError';
 
 export class AuthService {
   private userRepo = new UserRepository();
@@ -19,7 +20,7 @@ export class AuthService {
     const { email, password, full_name } = data;
 
     const existingUser = await this.userRepo.getUserByEmail(email);
-    if (existingUser) throw new Error('EMAIL_EXISTS');
+    if (existingUser) throw new AppError(400, 'Email đã được sử dụng');
 
     const hashedPassword = await passwordUtil.hash(password);
 
@@ -44,7 +45,7 @@ export class AuthService {
     } catch (error: any) {
       await this.userRepo.deleteUser(user.id);
       console.error('Lỗi gửi mail, đã xoá user:', error);
-      throw new Error('EMAIL_SEND_FAILED');
+      throw new AppError(500, 'Không thể gửi email xác nhận. Vui lòng thử đăng ký lại sau.');
     }
 
     return user;
@@ -53,11 +54,11 @@ export class AuthService {
   public verifyEmail = async (token: string) => {
     const tokenRecord = await this.tokenRepo.findByToken(token);
     if (!tokenRecord || tokenRecord.type !== TokenType.VERIFICATION) {
-      throw new Error('INVALID_TOKEN');
+      throw new AppError(400, 'Token không tồn tại hoặc sai loại');
     }
 
     if (tokenRecord.expires_at < getDate()) {
-      throw new Error('TOKEN_EXPIRED');
+      throw new AppError(400, 'Token đã hết hạn');
     }
 
     await this.userRepo.updateVerificationStatus(tokenRecord.user_id, true);
@@ -68,8 +69,8 @@ export class AuthService {
 
   public resendVerificationEmail = async (email: string) => {
     const user = await this.userRepo.getUserByEmail(email);
-    if (!user) throw new Error('USER_NOT_FOUND');
-    if (user.is_verified) throw new Error('ALREADY_VERIFIED');
+    if (!user) throw new AppError(404, 'Không tìm thấy tài khoản này');
+    if (user.is_verified) throw new AppError(400, 'Tài khoản này đã được xác nhận từ trước');
 
     // Tạo token mới
     const verificationToken = tokenUtil.generateToken();
@@ -87,7 +88,7 @@ export class AuthService {
       await sendVerificationEmail(user.email, verificationToken);
     } catch (error) {
       console.error('Lỗi gửi mail:', error);
-      throw new Error('EMAIL_SEND_FAILED');
+      throw new AppError(500, 'Lỗi hệ thống gửi mail. Vui lòng thử lại sau.');
     }
 
     return true;
@@ -97,12 +98,12 @@ export class AuthService {
     const { email, password } = data;
 
     const user = await this.userRepo.getUserByEmail(email);
-    if (!user) throw new Error('USER_NOT_FOUND');
+    if (!user) throw new AppError(400, 'Email hoặc mật khẩu không chính xác');
 
     const isMatch = await passwordUtil.compare(password, user.password);
-    if (!isMatch) throw new Error('INVALID_PASSWORD');
+    if (!isMatch) throw new AppError(400, 'Email hoặc mật khẩu không chính xác');
 
-    if (!user.is_verified) throw new Error('EMAIL_NOT_VERIFIED');
+    if (!user.is_verified) throw new AppError(403, 'Vui lòng xác nhận email trước khi đăng nhập');
 
     const accessToken = tokenUtil.signAccessToken({ id: user.id, role: user.role });
     const refreshToken = tokenUtil.signRefreshToken({ id: user.id });
@@ -123,7 +124,7 @@ export class AuthService {
 
   public forgotPassword = async (email: string) => {
     const user = await this.userRepo.getUserByEmail(email);
-    if (!user) throw new Error('USER_NOT_FOUND');
+    if (!user) throw new AppError(404, 'Không tìm thấy tài khoản với email này.');
 
     const otp = tokenUtil.generateOTP();
 
@@ -138,7 +139,7 @@ export class AuthService {
       await sendPasswordResetOTPEmail(user.email, otp);
     } catch (error) {
       console.error('Lỗi gửi mail OTP: ', error);
-      throw new Error('EMAIL_SEND_FAILED');
+      throw new AppError(500, 'Lỗi hệ thống gửi mail. Vui lòng thử lại sau.');
     }
 
     return true;
@@ -148,16 +149,16 @@ export class AuthService {
     const { email, otp, newPassword } = data;
 
     const user = await this.userRepo.getUserByEmail(email);
-    if (!user) throw new Error('USER_NOT_FOUND');
+    if (!user) throw new AppError(404, 'Không tìm thấy tài khoản.');
 
     const tokenRecord = await this.tokenRepo.findValidOTP(user.id, otp, TokenType.RESET_PASSWORD);
     if (!tokenRecord) {
-      throw new Error('INVALID_OTP');
+      throw new AppError(404, 'Mã OTP không hợp lệ hoặc không đúng.');
     }
 
     if (tokenRecord.expires_at < getDate()) {
       await this.tokenRepo.delete(tokenRecord.id);
-      throw new Error('OTP_EXPIRED');
+      throw new AppError(400, 'Mã OTP đã hết hạn. Vui lòng gửi lại yêu cầu.');
     }
 
     const hashedPassword = await passwordUtil.hash(newPassword);
@@ -168,36 +169,32 @@ export class AuthService {
     return true;
   };
 
-  // Cấp lại Access Token mới
   public refreshToken = async (refreshToken: string) => {
     try {
       const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET as string) as any;
 
       const tokenRecord = await this.tokenRepo.findByToken(refreshToken);
       if (!tokenRecord || tokenRecord.type !== TokenType.REFRESH) {
-        throw new Error('INVALID_TOKEN');
+        throw new AppError(401, 'Refresh token không hợp lệ hoặc đã hết hạn.');
       }
 
       const user = await this.userRepo.getUserById(tokenRecord.user_id);
-      if (!user) throw new Error('USER_NOT_FOUND');
+      if (!user) throw new AppError(404, 'Không tìm thấy tài khoản');
 
-      const newAccessToken = tokenUtil.signAccessToken(
-        { id: user.id, role: user.role }
-      )
+      const newAccessToken = tokenUtil.signAccessToken({ id: user.id, role: user.role });
       return { accessToken: newAccessToken };
     } catch (error: any) {
-      throw new Error('INVALID_OR_EXPIRED_TOKEN');
+      throw new AppError(401, 'Refresh token không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại.');
     }
-  }
+  };
 
   public logout = async (refreshToken: string) => {
     const tokenRecord = await this.tokenRepo.findByToken(refreshToken);
 
     if (!tokenRecord || tokenRecord.type !== 'REFRESH') {
-      throw new Error('TOKEN_NOT_FOUND'); // <-- Bắt lỗi tại đây
+      throw new AppError(404, 'Không tìm thấy token');
     }
 
     await this.tokenRepo.delete(tokenRecord.id);
-  }
+  };
 }
-

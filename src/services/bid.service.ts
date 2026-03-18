@@ -2,9 +2,9 @@ import { BidRepository } from '../repositories/bid.repository';
 import { ItemRepository } from '../repositories/item.repository';
 import { EventRepository } from '../repositories/event.repository';
 import { UserRepository } from '../repositories/user.repository';
-import { FirebaseUtils } from '../utils/firebase.util';
 import { firebaseDB } from '../config/firebase.config';
 import { getDate } from '../utils/day.util';
+import { AppError } from '../utils/appError';
 
 export class BidService {
   private bidRepo = new BidRepository();
@@ -18,26 +18,26 @@ export class BidService {
     // ==========================================
     const user = await this.userRepo.getUserById(userId);
     if (!user) {
-      throw new Error('USER_NOT_FOUND');
+      throw new AppError(404, 'Người dùng không tồn tại!');
     }
 
     const isParticipant = await this.eventRepo.checkParticipant(eventId, userId);
     if (!isParticipant) {
-      throw new Error('NOT_PARTICIPANT');
+      throw new AppError(403, 'Bạn chưa tham gia phòng đấu giá này! Vui lòng tham gia trước khi đặt giá.');
     }
 
     const event = await this.eventRepo.findById(eventId);
     if (!event || event.status !== 'ONGOING') {
-      throw new Error('EVENT_NOT_ONGOING');
+      throw new AppError(400, 'Sự kiện này chưa diễn ra hoặc đã kết thúc.');
     }
 
     const item = await this.itemRepo.getItemById(itemId);
     if (!item || item.event_id !== eventId) {
-      throw new Error('ITEM_NOT_FOUND');
+      throw new AppError(404, 'Vật phẩm không tồn tại trong sự kiện.');
     }
 
     if (Number(user.balance) < amount) {
-      throw new Error('INSUFFICIENT_BALANCE');
+      throw new AppError(400, 'Số dư ví của bạn không đủ để đặt mức giá này.');
     }
 
     // ==========================================
@@ -66,7 +66,7 @@ export class BidService {
 
       // 3. Chuẩn bị ghi dữ liệu mới
       if (!currentItemData.bids) {
-        currentItemData.bids = { };
+        currentItemData.bids = {};
       }
 
       // Sinh tự động 1 key (giống hàm push của firebase)
@@ -87,17 +87,22 @@ export class BidService {
       return currentItemData;
     });
 
-
     // ==========================================
     // BƯỚC 3: KIỂM TRA KẾT QUẢ TRANSACTION
     // ==========================================
     if (!transactionResult.committed) {
-      if (transactionError) {
-        // Nếu bị hủy do logic bên trong (lỗi giá thấp, chưa có node...)
-        throw new Error(transactionError);
+      if (transactionError === 'FIREBASE_NODE_NOT_FOUND') {
+        throw new AppError(400, 'Phòng đấu giá đang được khởi tạo, vui lòng thử lại sau vài giây!');
+      }
+      if (transactionError && (transactionError as string).startsWith('INVALID_AMOUNT')) {
+        const minPrice = (transactionError as string).split(':')[1];
+        throw new AppError(
+          400,
+          `Giá đặt không hợp lệ! Bạn phải đặt mức giá tối thiểu là ${Number(minPrice).toLocaleString('vi-VN')}đ`,
+        );
       }
       // Nếu bị hủy do mạng hoặc xung đột quá nhanh mà Firebase không xử lý kịp
-      throw new Error("RACE_CONDITION_FAILED");
+      throw new AppError(409, 'Hệ thống đang bận do có quá nhiều người đặt giá cùng lúc. Vui lòng thử lại!');
     }
 
     console.log(`🚀 [Firebase] User ${user.full_name} đã bid thành công ${amount} cho Item ${itemId}`);

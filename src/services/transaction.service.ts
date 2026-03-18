@@ -1,5 +1,6 @@
 import { TransactionRepository } from '../repositories/transaction.repository';
 import { UserRepository } from '../repositories/user.repository';
+import { AppError } from '../utils/appError';
 
 export class TransactionService {
   private transactionRepo = new TransactionRepository();
@@ -12,27 +13,27 @@ export class TransactionService {
   public payTransaction = async (transactionId: string, userId: string) => {
     const transaction = await this.transactionRepo.getTransactionById(transactionId);
     if (!transaction) {
-      throw new Error('TRANSACTION_NOT_FOUND');
+      throw new AppError(404, 'Không tìm thấy mã giao dịch này');
     }
     // User không được phép thanh toán hộ/thanh toán trộm đơn của người khác
     if (transaction.user_id !== userId) {
-      throw new Error('NOT_YOUR_TRANSACTION');
+      throw new AppError(403, 'Bạn không có quyền thanh toán cho đơn hàng của người khác');
     }
     // CHỐNG DOUBLE-SPENDING: Nếu đã thanh toán rồi thì chặn đứng ngay lập tức
     if (transaction.status === 'PAID') {
-      throw new Error('ALREADY_PAID');
+      throw new AppError(400, 'Đơn hàng này đã được thanh toán rồi');
     }
     if (transaction.status === 'FAILED') {
-      throw new Error('TRANSACTION_FAILED');
+      throw new AppError(400, 'Giao dịch này đã thất bại hoặc quá hạn thanh toán');
     }
 
     const user = await this.userRepo.getUserById(userId);
     if (!user) {
-      throw new Error('USER_NOT_FOUND');
+      throw new AppError(404, 'Không tìm thấy thông tin người dùng');
     }
 
     if (Number(user.balance) < Number(transaction.amount)) {
-      throw new Error('INSUFFICIENT_BALANCE');
+      throw new AppError(400, 'Số dư ví của bạn không đủ để thanh toán. Vui lòng nạp thêm!');
     }
 
     const result = await this.transactionRepo.payTransaction(

@@ -1,4 +1,5 @@
 import { prisma } from '../config/prisma.config';
+import { AppError } from '../utils/appError';
 
 export class AdminService {
   public getStats = async () => {
@@ -24,7 +25,7 @@ export class AdminService {
 
   public updateUser = async (userId: string, data: any) => {
     const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user) throw new Error('USER_NOT_FOUND');
+    if (!user) throw new AppError(404, 'Người dùng không tồn tại');
 
     const updatedUser = await prisma.user.update({
       where: { id: userId },
