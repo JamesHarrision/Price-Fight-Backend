@@ -1,27 +1,26 @@
 import admin from 'firebase-admin'
-import path from 'path'
 import dotenv from 'dotenv'
-import fs from 'fs'
 
 dotenv.config();
 
-const serviceAccountPath = path.resolve(process.env.FIREBASE_SERVICE_ACCOUNT_PATH as string);
+const raw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
 
-if (!fs.existsSync(serviceAccountPath)) {
-  console.error(`[Firebase] Không tìm thấy tệp Service Account tại: ${serviceAccountPath}`);
-} else {
-  try {
-    const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf-8'));
+if (!raw) {
+  throw new Error('[Firebase] Biến môi trường FIREBASE_SERVICE_ACCOUNT_JSON chưa được set!');
+}
 
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-      databaseURL: process.env.FIREBASE_DATABASE_URL
-    });
+try {
+  const serviceAccount = JSON.parse(raw);
 
-    console.log('[Firebase] Admin SDK khởi tạo thành công.');
-  } catch (error) {
-    console.error('[Firebase] Lỗi khởi tạo:', error);
-  }
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+    databaseURL: process.env.FIREBASE_DATABASE_URL
+  });
+
+  console.log('[Firebase] Admin SDK khởi tạo thành công.');
+} catch (error) {
+  console.error('[Firebase] Lỗi khởi tạo:', error);
+  throw error;
 }
 
 // Xuất đối tượng database để các file khác sử dụng
