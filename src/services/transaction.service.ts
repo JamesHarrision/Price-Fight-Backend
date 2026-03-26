@@ -1,6 +1,7 @@
 import { TransactionRepository } from '../repositories/transaction.repository';
 import { UserRepository } from '../repositories/user.repository';
 import { AppError } from '../utils/appError';
+import { getDate } from '../utils/day.util';
 
 export class TransactionService {
   private transactionRepo = new TransactionRepository();
@@ -49,7 +50,7 @@ export class TransactionService {
   public handleExpiredTransactions = async () => {
     console.log('🔄 [Transaction Job] Đang quét các hóa đơn quá hạn...');
     const X_DAYS = 3; // Quy định 3 ngày
-    const expiryDate = new Date();
+    const expiryDate = getDate();
     expiryDate.setDate(expiryDate.getDate() - X_DAYS);
 
     const expiredTxns = await this.transactionRepo.getExpiredPendingTransactions(expiryDate);

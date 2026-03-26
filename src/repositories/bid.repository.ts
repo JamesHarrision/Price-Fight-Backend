@@ -1,4 +1,5 @@
 import { prisma } from '../config/prisma.config';
+import { getDate } from '../utils/day.util';
 
 export class BidRepository {
   public getBidByUserAndEvent = async (userId: string, eventId: string) => {
@@ -24,6 +25,7 @@ export class BidRepository {
           item_id: itemId,
           user_id: userId,
           amount: amount,
+          time: getDate()
         },
       });
 
