@@ -11,8 +11,7 @@ export class ItemController {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 5;
     const items = await this.itemService.getItemsByEvent(eventId as string, page, limit);
-
-    return res.status(200).json({ items });
+    return res.status(200).json(items);
   };
 
   public getInventoryItems = async (req: Request, res: Response) => {

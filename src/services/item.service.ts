@@ -17,7 +17,7 @@ export class ItemService {
 
     const { items, total } = await this.itemRepo.getItemsByEventId(eventId, skip, limit);
     return {
-      data: items,
+      items: items,
       pagination: {
         total_items: total,
         total_pages: Math.ceil(total / limit),
