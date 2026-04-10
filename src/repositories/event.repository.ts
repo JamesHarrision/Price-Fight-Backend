@@ -1,5 +1,6 @@
-import { Prisma } from '@prisma/client';
+import { EventStatus, Prisma } from '@prisma/client';
 import { prisma } from '../config/prisma.config';
+import { getDate } from '../utils/day.util';
 
 export class EventRepository {
   public create = async (data: Prisma.AuctionEventCreateInput) => {
@@ -24,6 +25,12 @@ export class EventRepository {
   public findById = async (id: string) => {
     return await prisma.auctionEvent.findUnique({
       where: { id },
+      include: {
+        items: true,
+        _count: {
+          select: { participants: true }
+        }
+      }
     });
   };
 
@@ -66,4 +73,76 @@ export class EventRepository {
     })
   }
 
+  public getAllEvents = async (page: number = 1, limit: number = 10, status: string) => {
+    const skip = (page - 1) * limit;
+    const whereCondition: any = {}
+
+    if (status) whereCondition.status = status;
+
+    const [event, total] = await Promise.all([
+      await prisma.auctionEvent.findMany({
+        where: whereCondition,
+        skip: skip,
+        take: limit,
+        orderBy: { start_time: 'desc' }
+      }),
+      await prisma.auctionEvent.count({
+        where: whereCondition
+      }),
+    ]);
+
+    return {
+      data: event,
+      pagination: {
+        totalPages: Math.ceil(total / limit),
+        totalItems: total,
+        page: page,
+        limit: limit
+      }
+    }
+  }
+
+  public getPendingEvents = async () => {
+    return await prisma.auctionEvent.findMany({
+      where: {
+        status: EventStatus.PENDING,
+        start_time: {
+          lte: getDate()
+        }
+      },
+      include: {
+        items: true
+      }
+    });
+  }
+
+  public getEndedOngoingEvents = async () => {
+    return await prisma.auctionEvent.findMany({
+      where: {
+        status: EventStatus.ONGOING,
+        end_time: {
+          lte: getDate()
+        }
+      },
+      include: {
+        items: true
+      }
+    });
+  }
+
+  public getParticipantsByEventId = async (eventId: string) => {
+    return await prisma.eventParticipant.findMany({
+      where: { event_id: eventId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            full_name: true,
+            email: true,
+            avatar_url: true
+          }
+        }
+      }
+    });
+  }
 }

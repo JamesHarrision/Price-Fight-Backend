@@ -1,6 +1,7 @@
 import { EventRepository } from '../repositories/event.repository';
 import { ItemRepository } from '../repositories/item.repository';
 import { deleteImageFromCloudinary } from '../utils/cloudinary.util';
+import { AppError } from '../utils/appError';
 
 export class ItemService {
   private itemRepo = new ItemRepository();
@@ -9,14 +10,14 @@ export class ItemService {
   public getItemsByEvent = async (eventId: string, page: number = 1, limit: number = 5) => {
     const event = await this.eventRepo.findById(eventId);
     if (!event) {
-      throw new Error('EVENT_NOT_FOUND');
+      throw new AppError(404, 'Sự kiện không tồn tại!');
     }
 
     const skip = (page - 1) * limit;
 
     const { items, total } = await this.itemRepo.getItemsByEventId(eventId, skip, limit);
     return {
-      data: items,
+      items: items,
       pagination: {
         total_items: total,
         total_pages: Math.ceil(total / limit),
@@ -30,7 +31,7 @@ export class ItemService {
     const item = await this.itemRepo.getItemById(itemId);
 
     if (!item) {
-      throw new Error('ITEM_NOT_FOUND');
+      throw new AppError(404, 'Vật phẩm không tồn tại!');
     }
     return item;
   };
@@ -39,10 +40,10 @@ export class ItemService {
     if (eventId) {
       const event = await this.eventRepo.findById(eventId);
       if (!event) {
-        throw new Error('EVENT_NOT_FOUND');
+        throw new AppError(404, 'Sự kiện không tồn tại!');
       }
       if (event.status !== 'PENDING') {
-        throw new Error('EVENT_NOT_PENDING');
+        throw new AppError(400, 'Chỉ có thể thêm vật phẩm khi sự kiện chưa bắt đầu');
       }
     }
     const newItemData = {
@@ -63,11 +64,11 @@ export class ItemService {
     const item = await this.itemRepo.getItemById(itemId);
 
     if (!item) {
-      throw new Error('ITEM_NOT_FOUND');
+      throw new AppError(404, 'Vật phẩm không tồn tại!');
     }
 
-    if (item.status !== 'WAITING') {
-      throw new Error('ITEM_NOT_WAITING');
+    if (item.status !== 'WAITING' && item.status !== 'UNSOLD') {
+      throw new AppError(400, 'Không thể sửa vật phẩm đang hoặc đã đấu giá');
     }
 
     const updateData: any = {};
@@ -101,11 +102,11 @@ export class ItemService {
     const item = await this.itemRepo.getItemById(itemId);
 
     if (!item) {
-      throw new Error('ITEM_NOT_FOUND');
+      throw new AppError(404, 'Vật phẩm không tồn tại!');
     }
 
     if (item.status !== 'WAITING') {
-      throw new Error('ITEM_NOT_WAITING');
+      throw new AppError(400, 'Không thể xóa vật phẩm đang hoặc đã đấu giá');
     }
 
     if (item.primary_image) {
@@ -122,12 +123,13 @@ export class ItemService {
     return true;
   };
 
-  public getInventoryItems = async (page: number = 1, limit: number = 5) => {
+  public getInventoryItems = async (page: number = 1, limit: number = 5, search?: string, status?: string, unassignedOnly?: boolean) => {
     const skip = (page - 1) * limit;
-    const { items, total } = await this.itemRepo.getInventoryItems(skip, limit);
+    const { items, total } = await this.itemRepo.getInventoryItems(skip, limit, search, status, unassignedOnly);
 
     return {
-      data: items,
+      items,
+      total,
       pagination: {
         total_items: total,
         total_pages: Math.ceil(total / limit),
