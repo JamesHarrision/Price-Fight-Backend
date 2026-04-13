@@ -35,13 +35,17 @@ export class EventService {
 
     const updateData = { ...data };
 
+    // Convert datetime strings sang Date object cho Prisma
+    if (updateData.start_time) updateData.start_time = parseDate(updateData.start_time);
+    if (updateData.end_time) updateData.end_time = parseDate(updateData.end_time);
+
     // Nếu có cập nhật thời gian thì mới validate lại
     if (data.start_time || data.end_time) {
-      const start = parseDate(data.start_time || existingEvent.start_time);
-      const end = parseDate(data.end_time || existingEvent.end_time);
+      const start = updateData.start_time || existingEvent.start_time;
+      const end = updateData.end_time || existingEvent.end_time;
 
-      if (parseDate(start) < getDate()) throw new AppError(400, 'Thời gian bắt đầu phải lớn hơn thời gian hiện tại');
-      if (parseDate(start) > parseDate(end))
+      if (start < getDate()) throw new AppError(400, 'Thời gian bắt đầu phải lớn hơn thời gian hiện tại');
+      if (start > end)
         throw new AppError(400, 'Thời gian kết thúc phải lớn hơn thời gian bắt đầu');
     }
 

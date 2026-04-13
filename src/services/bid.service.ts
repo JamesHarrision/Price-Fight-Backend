@@ -51,7 +51,7 @@ export class BidService {
       // 1. Nếu node chưa được khởi tạo bởi Cronjob
       if (currentItemData === null) {
         transactionError = 'FIREBASE_NODE_NOT_FOUND';
-        return null; // Trả về undefined để hủy transaction
+        return null; // Trả về undefined để hủy transaction (KHÔNG PHẢI null)
       }
 
       const currentPrice = currentItemData.current_price || Number(item.start_price);
@@ -77,7 +77,7 @@ export class BidService {
         user_id: user.id,
         full_name: user.full_name,
         amount: amount,
-        time: getDate(),
+        time: getDate().toISOString(),
       };
 
       // Cập nhật giá cao nhất và người giữ giá
