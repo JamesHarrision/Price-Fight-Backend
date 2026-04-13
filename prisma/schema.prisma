@@ -9,7 +9,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -66,6 +66,7 @@ model User {
   bids               BidHistory[]
   transactions       Transaction[]
   wonItems           AuctionItem[]      @relation("ItemWinner")
+  addresses          Address[]
 
   @@map("users")
 }
@@ -163,4 +164,19 @@ model Token {
   user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@map("tokens")
+}
+
+// [BỔ SUNG] Sổ địa chỉ kết nối với User
+model Address {
+  id         String   @id @default(uuid())
+  user_id    String
+  phone      String
+  street     String
+  city       String
+  is_default Boolean  @default(false)
+  created_at DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("addresses")
 }

@@ -60,4 +60,34 @@ export class UserController {
       balance: updatedUser.balance,
     });
   };
+
+  // --- Address Endpoints ---
+  public getAddresses = async (req: AuthRequest, res: Response) => {
+    const userId = req.user.id;
+    const addresses = await this.userService.getAddresses(userId);
+    return res.status(200).json({ data: addresses });
+  };
+
+  public addAddress = async (req: AuthRequest, res: Response) => {
+    const userId = req.user.id;
+    const { phone, street, city, is_default } = req.body;
+
+    if (!phone || !street || !city) {
+      throw new AppError(400, 'Vui lòng cung cấp đầy đủ phone, street, city');
+    }
+
+    const newAddress = await this.userService.addAddress(userId, { phone, street, city, is_default });
+    return res.status(201).json({
+      message: 'Thêm địa chỉ thành công',
+      data: newAddress
+    });
+  };
+
+  public deleteAddress = async (req: AuthRequest, res: Response) => {
+    const userId = req.user.id;
+    const { id } = req.params;
+
+    const result = await this.userService.deleteAddress(userId, id as string);
+    return res.status(200).json(result);
+  };
 }

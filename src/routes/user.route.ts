@@ -12,6 +12,10 @@ router.put('/me', authenticate, cloudinaryUpload.single("avatar_url"), userContr
 
 router.post('/wallet/deposit', authenticate, userController.deposit);
 
+router.get('/addresses', authenticate, userController.getAddresses);
+router.post('/addresses', authenticate, userController.addAddress);
+router.delete('/addresses/:id', authenticate, userController.deleteAddress);
+
 router.get('/', authenticate, authorizedAdmin, userController.getAllUsers);
 
 export default router;

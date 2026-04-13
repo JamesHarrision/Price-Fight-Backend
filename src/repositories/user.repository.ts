@@ -69,4 +69,28 @@ export class UserRepository {
 
     return { users, total };
   };
+
+  // --- Address Management ---
+  public getAddressesByUserId = async (userId: string) => {
+    return await prisma.address.findMany({
+      where: { user_id: userId },
+      orderBy: { created_at: 'desc' },
+    });
+  };
+
+  public createAddress = async (data: any) => {
+    return await prisma.address.create({ data });
+  };
+
+  public getAddressById = async (addressId: string) => {
+    return await prisma.address.findUnique({
+      where: { id: addressId },
+    });
+  };
+
+  public deleteAddress = async (addressId: string) => {
+    return await prisma.address.delete({
+      where: { id: addressId },
+    });
+  };
 }
