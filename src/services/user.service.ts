@@ -77,4 +77,9 @@ export class UserService {
     await this.userRepo.deleteAddress(addressId);
     return { message: 'Xóa địa chỉ thành công' };
   };
+
+  // --- Bids Business Logic ---
+  public getMyBids = async (userId: string) => {
+    return await this.userRepo.getMyBids(userId);
+  };
 }

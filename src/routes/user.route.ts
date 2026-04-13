@@ -18,4 +18,6 @@ router.delete('/addresses/:id', authenticate, userController.deleteAddress);
 
 router.get('/', authenticate, authorizedAdmin, userController.getAllUsers);
 
+router.get('/bids', authenticate, userController.getMyBids);
+
 export default router;

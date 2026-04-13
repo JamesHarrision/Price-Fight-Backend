@@ -90,4 +90,11 @@ export class UserController {
     const result = await this.userService.deleteAddress(userId, id as string);
     return res.status(200).json(result);
   };
+
+  // --- Bids Endpoints ---
+  public getMyBids = async (req: AuthRequest, res: Response) => {
+    const userId = req.user.id;
+    const bids = await this.userService.getMyBids(userId);
+    return res.status(200).json({ data: bids });
+  };
 }
