@@ -90,7 +90,7 @@ export class LifeCycleService {
                       item_id: item.id,
                       user_id: bid.user_id,
                       amount: bid.amount,
-                      time: parseDate(new Date(bid.time))
+                      time: bid.time ? new Date(bid.time) : new Date()
                     })
                   }
                 }

@@ -1,28 +1,35 @@
+import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-const BREVO_API_KEY = process.env.BREVO_API_KEY!;
-const EMAIL_USER = process.env.EMAIL_USER!;
+const EMAIL_HOST = process.env.EMAIL_HOST;
+const EMAIL_PORT = process.env.EMAIL_PORT;
+const EMAIL_USER = process.env.EMAIL_USER;
+const EMAIL_PASS = process.env.EMAIL_PASS;
+
+const transporter = nodemailer.createTransport({
+  host: EMAIL_HOST,
+  port: Number(EMAIL_PORT) || 587,
+  secure: false, // true for 465, false for other ports
+  auth: {
+    user: EMAIL_USER,
+    pass: EMAIL_PASS,
+  },
+});
 
 const sendEmail = async (to: string, subject: string, html: string) => {
-  const response = await fetch('https://api.brevo.com/v3/smtp/email', {
-    method: 'POST',
-    headers: {
-      'api-key': BREVO_API_KEY,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      sender: { name: 'Price Fight', email: EMAIL_USER },
-      to: [{ email: to }],
+  try {
+    const info = await transporter.sendMail({
+      from: `"Price Fight" <${EMAIL_USER}>`,
+      to,
       subject,
-      htmlContent: html,
-    }),
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(`Brevo error: ${JSON.stringify(error)}`);
+      html,
+    });
+    console.log("Email sent: %s", info.messageId);
+  } catch (error) {
+    console.error("Nodemailer Error:", error);
+    throw new Error(`Nodemailer error: ${error}`);
   }
 };
 
@@ -37,6 +44,7 @@ export const sendVerificationEmail = async (to: string, token: string) => {
         <h2>Chào mừng bạn đến với Price Fight!</h2>
         <p>Vui lòng click vào đường link bên dưới để xác nhận tài khoản của bạn:</p>
         <a href="${verifyUrl}" target="_blank">Xác nhận Email</a>
+        ${verifyUrl}
         <p>Link này sẽ hết hạn trong 24 giờ.</p>
       `
     );

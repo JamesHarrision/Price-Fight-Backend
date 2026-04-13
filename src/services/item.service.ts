@@ -75,6 +75,18 @@ export class ItemService {
     if (data.name) updateData.name = data.name;
     if (data.description) updateData.description = data.description;
     if (data.event_id !== undefined) {
+      // Chỉ item WAITING hoặc UNSOLD mới được gán vào sự kiện
+      if (data.event_id && item.status !== 'WAITING' && item.status !== 'UNSOLD') {
+        throw new AppError(400, 'Không thể thêm vật phẩm đã bán hoặc đang đấu giá vào sự kiện');
+      }
+      // Sự kiện đích phải ở trạng thái PENDING
+      if (data.event_id) {
+        const targetEvent = await this.eventRepo.findById(data.event_id);
+        if (!targetEvent) throw new AppError(404, 'Sự kiện đích không tồn tại');
+        if (targetEvent.status !== 'PENDING') {
+          throw new AppError(400, 'Chỉ có thể thêm vật phẩm vào sự kiện chưa bắt đầu');
+        }
+      }
       updateData.event_id = data.event_id ? data.event_id : null;
     }
     if (data.primary_image) {

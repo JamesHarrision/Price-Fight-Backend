@@ -52,4 +52,34 @@ export class UserService {
       },
     };
   };
+
+  // --- Address Business Logic ---
+  public getAddresses = async (userId: string) => {
+    return await this.userRepo.getAddressesByUserId(userId);
+  };
+
+  public addAddress = async (userId: string, data: any) => {
+    const existingAddresses = await this.userRepo.getAddressesByUserId(userId);
+    const isFirst = existingAddresses.length === 0;
+
+    return await this.userRepo.createAddress({
+      ...data,
+      user_id: userId,
+      is_default: data.is_default !== undefined ? data.is_default : isFirst,
+    });
+  };
+
+  public deleteAddress = async (userId: string, addressId: string) => {
+    const address = await this.userRepo.getAddressById(addressId);
+    if (!address) throw new AppError(404, 'Không tìm thấy địa chỉ');
+    if (address.user_id !== userId) throw new AppError(403, 'Bạn không có quyền xóa địa chỉ này');
+
+    await this.userRepo.deleteAddress(addressId);
+    return { message: 'Xóa địa chỉ thành công' };
+  };
+
+  // --- Bids Business Logic ---
+  public getMyBids = async (userId: string) => {
+    return await this.userRepo.getMyBids(userId);
+  };
 }
