@@ -44,7 +44,6 @@ export class EventService {
       const start = updateData.start_time || existingEvent.start_time;
       const end = updateData.end_time || existingEvent.end_time;
 
-      if (start < getDate()) throw new AppError(400, 'Thời gian bắt đầu phải lớn hơn thời gian hiện tại');
       if (start > end)
         throw new AppError(400, 'Thời gian kết thúc phải lớn hơn thời gian bắt đầu');
     }
