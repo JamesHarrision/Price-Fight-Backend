@@ -1,0 +1,12 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const admin_controller_1 = require("../controllers/admin.controller");
+const auth_middleware_1 = require("../middlewares/auth.middleware");
+const router = (0, express_1.Router)();
+const adminController = new admin_controller_1.AdminController();
+router.get('/stats', auth_middleware_1.authenticate, auth_middleware_1.authorizedAdmin, adminController.getStats);
+router.put('/users/:userId', auth_middleware_1.authenticate, auth_middleware_1.authorizedAdmin, adminController.updateUser);
+router.post('/jobs/cleanup-tokens', auth_middleware_1.authenticate, auth_middleware_1.authorizedAdmin, adminController.manualTriggerCleanupTokens);
+router.get('/transactions', auth_middleware_1.authenticate, auth_middleware_1.authorizedAdmin, adminController.getAllTransactions);
+exports.default = router;

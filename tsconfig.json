@@ -2,15 +2,20 @@
   "compilerOptions": {
     "target": "es2020",
     "module": "commonjs",
-    "rootDir": "./src",        /* Code nằm trong folder src */
-    "outDir": "./dist",        /* Code build ra folder dist */
+    "rootDir": "./src", /* Code nằm trong folder src */
+    "outDir": "./dist", /* Code build ra folder dist */
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
-  }, 
+  },
+  "include": [
+    "src/**/*"
+  ],
   "exclude": [
     "node_modules",
-    "prisma"
+    "scripts",
+    "prisma",
+    "**/*.spec.ts"
   ]
 }

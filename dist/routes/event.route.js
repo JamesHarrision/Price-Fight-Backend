@@ -1,0 +1,18 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const auth_middleware_1 = require("../middlewares/auth.middleware");
+const cloudinary_config_1 = require("../config/cloudinary.config");
+const event_controller_1 = require("../controllers/event.controller");
+const router = (0, express_1.Router)();
+const eventController = new event_controller_1.EventController();
+router.post('/', auth_middleware_1.authenticate, auth_middleware_1.authorizedAdmin, cloudinary_config_1.cloudinaryUpload.single('cover_image'), eventController.createEvent);
+router.put('/:eventId', auth_middleware_1.authenticate, auth_middleware_1.authorizedAdmin, cloudinary_config_1.cloudinaryUpload.single('cover_image'), eventController.updateEvent);
+router.delete('/:eventId', auth_middleware_1.authenticate, auth_middleware_1.authorizedAdmin, eventController.deleteEvent);
+router.get('/:eventId', eventController.findEvent);
+router.delete("/:eventId/participants/:userId", auth_middleware_1.authenticate, eventController.kickUser);
+router.get('/:eventId/participants', auth_middleware_1.authenticate, eventController.getParticipants);
+router.post('/:eventId/participants', auth_middleware_1.authenticate, auth_middleware_1.authorizedAdmin, eventController.addParticipantByAdmin);
+router.post('/:eventId/join', auth_middleware_1.authenticate, eventController.joinEvent);
+router.get("/", auth_middleware_1.authenticate, eventController.getAllEvent);
+exports.default = router;

@@ -1,0 +1,17 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const auth_middleware_1 = require("../middlewares/auth.middleware");
+const user_controller_1 = require("../controllers/user.controller");
+const cloudinary_config_1 = require("../config/cloudinary.config");
+const router = (0, express_1.Router)();
+const userController = new user_controller_1.UserController();
+router.get('/me', auth_middleware_1.authenticate, userController.getMe);
+router.put('/me', auth_middleware_1.authenticate, cloudinary_config_1.cloudinaryUpload.single("avatar_url"), userController.updateMe);
+router.post('/wallet/deposit', auth_middleware_1.authenticate, userController.deposit);
+router.get('/addresses', auth_middleware_1.authenticate, userController.getAddresses);
+router.post('/addresses', auth_middleware_1.authenticate, userController.addAddress);
+router.delete('/addresses/:id', auth_middleware_1.authenticate, userController.deleteAddress);
+router.get('/', auth_middleware_1.authenticate, auth_middleware_1.authorizedAdmin, userController.getAllUsers);
+router.get('/bids', auth_middleware_1.authenticate, userController.getMyBids);
+exports.default = router;
