@@ -1,4 +1,5 @@
 import { prisma } from '../config/prisma.config';
+import { getDate } from '../utils/day.util';
 
 export class TokenRepository {
   public create = async (data: any) => {
@@ -19,6 +20,16 @@ export class TokenRepository {
         user_id: userId,
         token: otp,
         type: type,
+      },
+    });
+  };
+
+  public deleteExpiredTokens = async () => {
+    return await prisma.token.deleteMany({
+      where: {
+        expires_at: {
+          lt: getDate(),
+        },
       },
     });
   };

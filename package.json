@@ -5,6 +5,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon src/server.ts",
+    "demo": "ts-node scripts/seed-demo.ts",
+    "race": "ts-node scripts/test-race.ts",
     "build": "tsc",
     "start": "node dist/server.js",
     "lint": "eslint . --ext .ts"
@@ -14,22 +16,32 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@getbrevo/brevo": "^5.0.3",
     "@prisma/client": "5.22",
     "bcrypt": "^6.0.0",
+    "cloudinary": "^1.41.3",
     "cors": "^2.8.6",
+    "dayjs": "^1.11.20",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "firebase": "^12.10.0",
+    "firebase-admin": "^13.7.0",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
-    "nodemailer": "^8.0.1"
+    "multer": "^2.1.1",
+    "multer-storage-cloudinary": "^4.0.0",
+    "node-cron": "^4.2.1",
+    "nodemailer": "^8.0.1",
+    "resend": "^6.9.4"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
+    "@types/multer": "^2.1.0",
     "@types/node": "^25.3.5",
+    "@types/node-cron": "^3.0.11",
     "@types/nodemailer": "^7.0.11",
     "@types/nodemon": "^1.19.6",
     "@typescript-eslint/eslint-plugin": "^8.56.1",
@@ -42,5 +54,8 @@
     "prisma": "5.22",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
+  },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
   }
 }
