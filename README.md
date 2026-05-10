@@ -33,3 +33,54 @@ src/
 ├── routes/         # Express route definitions
 ├── services/       # Core business logic processing
 └── utils/          # Helper functions and utilities
+```
+
+⚙️ Getting Started
+Prerequisites
+Node.js (v18+)
+
+PostgreSQL
+
+Firebase Project Account
+
+Cloudinary Account
+
+Installation
+Clone the repository:
+
+```Bash
+git clone [https://github.com/your-username/price-fight-backend.git](https://github.com/your-username/price-fight-backend.git)
+cd price-fight-backend
+```
+Install dependencies:
+
+
+```Bash
+npm install
+```
+Environment Setup:
+Create a .env file in the root directory and configure the following variables (see .env.example for reference):
+
+```
+Đoạn mã
+PORT=
+DATABASE_URL=
+JWT_SECRET=
+FIREBASE_...=
+CLOUDINARY_...=
+SMTP_...=
+```
+
+Database Migration:
+Generate the Prisma client and push the schema to your PostgreSQL database:
+
+```Bash
+npx prisma generate
+npx prisma db push
+```
+
+Start the development server:
+
+```Bash
+npm run dev
+```
